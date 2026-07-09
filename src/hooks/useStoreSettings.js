@@ -1,0 +1,79 @@
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "../lib/supabase";
+
+const DEFAULT_THEME = { accentColor: "#c9ff3f", bgColor: "#0f1210", textColor: "#eef0ec", headingFont: "Bebas Neue", bodyFont: "Inter" };
+
+export function useStoreSettings() {
+  const [settings, setSettings] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase.from("store_settings").select("*").eq("id", 1).single();
+
+    if (error) {
+      console.error("Erro a carregar definições da loja:", error);
+      setLoading(false);
+      return;
+    }
+
+    setSettings({
+      storeName: data.store_name,
+      domain: data.domain,
+      currency: data.currency,
+      freeShippingThreshold: Number(data.free_shipping_threshold),
+      companyAddress: data.company_address,
+      companyPhone: data.company_phone,
+      companyEmail: data.company_email,
+      companyNif: data.company_nif,
+      showCompanyInfoFooter: data.show_company_info_footer,
+      analyticsScripts: data.analytics_scripts || "",
+      enableCardPayment: data.enable_card_payment,
+      enableBankTransfer: data.enable_bank_transfer,
+      companyIban: data.company_iban || "",
+      paymentMethodsAccepted: data.payment_methods_accepted || [],
+      enableStripe: data.enable_stripe,
+      stripePublishableKey: data.stripe_publishable_key || "",
+      enableMultibanco: data.enable_multibanco,
+      multibancoEntity: data.multibanco_entity || "",
+      enableMbway: data.enable_mbway,
+      theme: data.theme || DEFAULT_THEME,
+    });
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const updateSettings = async (patch) => {
+    const columnMap = {
+      storeName: "store_name",
+      domain: "domain",
+      currency: "currency",
+      freeShippingThreshold: "free_shipping_threshold",
+      companyAddress: "company_address",
+      companyPhone: "company_phone",
+      companyEmail: "company_email",
+      companyNif: "company_nif",
+      showCompanyInfoFooter: "show_company_info_footer",
+      analyticsScripts: "analytics_scripts",
+      enableCardPayment: "enable_card_payment",
+      enableBankTransfer: "enable_bank_transfer",
+      companyIban: "company_iban",
+      paymentMethodsAccepted: "payment_methods_accepted",
+      enableStripe: "enable_stripe",
+      stripePublishableKey: "stripe_publishable_key",
+      enableMultibanco: "enable_multibanco",
+      multibancoEntity: "multibanco_entity",
+      enableMbway: "enable_mbway",
+      theme: "theme",
+    };
+    const dbPatch = {};
+    Object.entries(patch).forEach(([k, v]) => { dbPatch[columnMap[k] || k] = v; });
+
+    const { error } = await supabase.from("store_settings").update(dbPatch).eq("id", 1);
+    if (error) throw error;
+    setSettings((s) => ({ ...s, ...patch }));
+  };
+
+  return { settings, loading, updateSettings, reload: load };
+}

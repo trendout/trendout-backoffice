@@ -239,6 +239,26 @@ begin
 end;
 $$ language plpgsql;
 
+-- ---------------------------------------------------------------
+-- STORAGE — bucket "product-images" (criar manualmente em Storage -> New bucket,
+-- marcado como público, antes de correr estas políticas)
+-- ---------------------------------------------------------------
+create policy "Public read product images"
+on storage.objects for select
+using (bucket_id = 'product-images');
+
+create policy "Authenticated upload product images"
+on storage.objects for insert
+with check (bucket_id = 'product-images' and auth.role() = 'authenticated');
+
+create policy "Authenticated update product images"
+on storage.objects for update
+using (bucket_id = 'product-images' and auth.role() = 'authenticated');
+
+create policy "Authenticated delete product images"
+on storage.objects for delete
+using (bucket_id = 'product-images' and auth.role() = 'authenticated');
+
 -- SHIPPING ADDRESSES
 --------------------------------------------------------------- 
 create table if not exists shipping_addresses (

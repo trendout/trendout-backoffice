@@ -29,6 +29,7 @@ export function useProducts() {
       id: p.id,
       name: p.name,
       reference: p.reference,
+      brand: p.brand,
       ean: p.ean,
       weightGrams: p.weight_grams,
       topCategory: p.top_category,
@@ -67,6 +68,7 @@ export function useProducts() {
         name: product.name,
         slug: product.slug || slugify(product.name),
         reference: product.reference,
+        brand: product.brand,
         ean: product.ean,
         weight_grams: product.weightGrams,
         top_category: product.topCategory,
@@ -126,7 +128,59 @@ export function useProducts() {
     setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
   };
 
-  return { products, loading, saveProduct, deleteProduct, quickUpdate, reload: load };
+  // ajusta o stock de uma variante específica (+1 / -1, nunca abaixo de 0)
+  const adjustVariantStock = async (productId, variantId, delta) => {
+    const product = products.find((p) => p.id === productId);
+    const variant = product?.variants.find((v) => v.id === variantId);
+    if (!variant) return;
+    const newStock = Math.max(0, variant.stock + delta);
+
+    setProducts((prev) => prev.map((p) => (
+      p.id === productId
+        ? { ...p, variants: p.variants.map((v) => (v.id === variantId ? { ...v, stock: newStock } : v)) }
+        : p
+    )));
+
+    const { error } = await supabase.from("product_variants").update({ stock: newStock }).eq("id", variantId);
+    if (error) console.error("Erro ao ajustar stock:", error);
+  };
+
+  // ajusta o preço de TODOS os produtos de uma vez — percentagem ou valor fixo, para cima ou para baixo
+  const bulkAdjustPrices = async ({ type, direction, value, includeCompareAt }) => {
+    const factor = direction === "decrease" ? -1 : 1;
+
+    const updates = products.map((p) => {
+      const newBase = type === "percent"
+        ? +(p.basePrice * (1 + (factor * value) / 100)).toFixed(2)
+        : +(p.basePrice + factor * value).toFixed(2);
+      const clampedBase = Math.max(0, newBase);
+
+      let newCompare = p.compareAtPrice;
+      if (includeCompareAt && p.compareAtPrice) {
+        const nc = type === "percent"
+          ? +(p.compareAtPrice * (1 + (factor * value) / 100)).toFixed(2)
+          : +(p.compareAtPrice + factor * value).toFixed(2);
+        newCompare = Math.max(0, nc);
+      }
+
+      return { id: p.id, basePrice: clampedBase, compareAtPrice: newCompare };
+    });
+
+    await Promise.all(
+      updates.map((u) =>
+        supabase.from("products").update({ base_price: u.basePrice, compare_at_price: u.compareAtPrice }).eq("id", u.id)
+      )
+    );
+
+    setProducts((prev) => prev.map((p) => {
+      const u = updates.find((x) => x.id === p.id);
+      return u ? { ...p, basePrice: u.basePrice, compareAtPrice: u.compareAtPrice } : p;
+    }));
+
+    return updates.length;
+  };
+
+  return { products, loading, saveProduct, deleteProduct, quickUpdate, adjustVariantStock, bulkAdjustPrices, reload: load };
 }
 
 export function useOrders() {
@@ -153,6 +207,7 @@ export function useOrders() {
         customerName: o.customer_name,
         customerEmail: o.customer_email,
         status: o.status,
+        paymentStatus: o.payment_status,
         paymentMethod: o.payment_method,
         cardLast4: o.card_last4,
         shippingCountry: o.shipping_country,
@@ -160,6 +215,8 @@ export function useOrders() {
         couponCode: o.coupon_code,
         discountAmount: Number(o.discount_amount || 0),
         estimatedDelivery: o.estimated_delivery,
+        vatRatePercent: o.vat_rate_percent != null ? Number(o.vat_rate_percent) : null,
+        vatAmount: o.vat_amount != null ? Number(o.vat_amount) : null,
         createdAt: o.created_at,
         subtotal: Number(o.subtotal),
         shippingCost: Number(o.shipping_cost),
@@ -194,7 +251,18 @@ export function useOrders() {
     setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
   };
 
-  return { orders, loading, updateStatus, reload: load };
+  // marca o pagamento como recebido (usado para transferências bancárias) —
+  // isto dispara o desconto de stock via trigger, e avança o estado para "confirmed"
+  const markAsPaid = async (id) => {
+    const { error } = await supabase
+      .from("orders")
+      .update({ payment_status: "paid", status: "confirmed" })
+      .eq("id", id);
+    if (error) throw error;
+    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, paymentStatus: "paid", status: "confirmed" } : o)));
+  };
+
+  return { orders, loading, updateStatus, markAsPaid, reload: load };
 }
 
 function slugify(s) {

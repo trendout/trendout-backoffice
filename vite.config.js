@@ -1,9 +1,10 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-// Se fores publicar em GitHub Pages num subcaminho (ex: username.github.io/trendout-backoffice),
-// define `base: "/trendout-backoffice/"`. Se usares domínio próprio (ex: admin.trendout.pt), deixa "/".
+// Enquanto serves em https://trendout.github.io/trendout-backoffice/ (sem domínio
+// próprio ainda), o base tem de bater certo com o nome do repositório. Quando
+// ligares um domínio próprio (ex: admin.trendout.pt) na raiz, muda para "/".
 export default defineConfig({
   plugins: [react()],
-  base: "/",
+  base: "/trendout-backoffice/",
 });
