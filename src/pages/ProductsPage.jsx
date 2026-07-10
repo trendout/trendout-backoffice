@@ -74,7 +74,9 @@ export default function ProductsPage() {
                     <button onClick={() => setModalProduct(p)} style={{ background: "none", border: "none", color: T.text, cursor: "pointer", fontWeight: 600, fontSize: 13, textAlign: "left", padding: 0 }}>
                       {p.name}
                     </button>
-                    <div style={{ fontSize: 11.5, color: T.muted }}>{p.category}</div>
+                    <div style={{ fontSize: 11.5, color: p.category ? T.muted : T.warn }}>
+                      {p.category || "Sem subcategoria — editar"}
+                    </div>
                   </td>
                   <td style={{ padding: "10px 14px" }}>
                     <select value={p.brand || "Trendout"} onChange={(e) => quickUpdate(p.id, { brand: e.target.value })} style={{ ...quickInputStyle, width: 96 }}>
