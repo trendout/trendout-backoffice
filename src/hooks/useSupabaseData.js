@@ -87,13 +87,12 @@ export function useProducts() {
 
     if (error) throw error;
 
-    // Substitui as variantes existentes pelas atuais (simples e seguro para um formulário pequeno)
-    const { error: deleteErr } = await supabase.from("product_variants").delete().eq("product_id", savedProduct.id);
-    if (deleteErr) throw deleteErr;
-
+    // Atualiza as variantes existentes no próprio sítio (preserva o ID — importante para
+    // não partir a ligação com encomendas já feitas) e cria as novas.
     if (product.variants?.length) {
-      const { error: variantsErr } = await supabase.from("product_variants").insert(
+      const { error: upsertErr } = await supabase.from("product_variants").upsert(
         product.variants.map((v) => ({
+          id: v.id,
           product_id: savedProduct.id,
           size: v.size,
           color: v.color,
@@ -103,7 +102,20 @@ export function useProducts() {
           sold_recently: v.soldRecently || 0,
         }))
       );
-      if (variantsErr) throw variantsErr;
+      if (upsertErr) throw upsertErr;
+    }
+
+    // Remove só as variantes que deixaram de estar no formulário — se alguma já tiver
+    // sido usada numa encomenda real, o Supabase recusa apagá-la, e simplesmente a deixamos ficar.
+    const { data: existingVariants } = await supabase
+      .from("product_variants")
+      .select("id")
+      .eq("product_id", savedProduct.id);
+    const currentIds = new Set(product.variants.map((v) => v.id));
+    const toRemove = (existingVariants || []).filter((v) => !currentIds.has(v.id));
+    for (const v of toRemove) {
+      const { error: delErr } = await supabase.from("product_variants").delete().eq("id", v.id);
+      if (delErr) console.warn("Não foi possível remover uma variante (provavelmente já usada numa encomenda):", delErr.message);
     }
 
     await load();
