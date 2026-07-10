@@ -19,6 +19,7 @@ export default function NavigationPage() {
   const { collections, loading: collectionsLoading } = useCollections();
   const [activeMenu, setActiveMenu] = useState("main_nav");
   const [modalItem, setModalItem] = useState(undefined);
+  const [errorMsg, setErrorMsg] = useState("");
 
   if (loading || categoriesLoading || collectionsLoading) {
     return <div style={{ color: T.muted, fontSize: 13.5 }}>A carregar navegação...</div>;
@@ -29,13 +30,25 @@ export default function NavigationPage() {
   const move = async (idx, dir) => {
     const target = idx + dir;
     if (target < 0 || target >= items.length) return;
-    const a = items[idx], b = items[target];
-    await reorder([{ id: a.id, position: b.position }, { id: b.id, position: a.position }]);
+    const reordered = [...items];
+    [reordered[idx], reordered[target]] = [reordered[target], reordered[idx]];
+    const updates = reordered.map((item, i) => ({ id: item.id, position: i }));
+    try {
+      await reorder(updates);
+      setErrorMsg("");
+    } catch (err) {
+      setErrorMsg(err.message || "Erro ao reordenar.");
+    }
   };
 
   const save = async (item) => {
-    await saveItem(activeMenu, item, collections);
-    setModalItem(undefined);
+    try {
+      await saveItem(activeMenu, item, collections);
+      setModalItem(undefined);
+      setErrorMsg("");
+    } catch (err) {
+      setErrorMsg(err.message || "Erro ao guardar o item de menu.");
+    }
   };
 
   const describeTarget = (item) => {
@@ -66,6 +79,8 @@ export default function NavigationPage() {
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 14 }}>
         <Button onClick={() => setModalItem(null)}><Plus size={15} /> Novo item</Button>
       </div>
+
+      {errorMsg && <div style={{ color: T.danger, fontSize: 13, marginBottom: 14 }}>{errorMsg}</div>}
 
       <div style={{ background: T.bgRaised, border: `1px solid ${T.border}`, borderRadius: 12, overflow: "hidden" }}>
         {items.map((item, idx) => (

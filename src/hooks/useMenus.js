@@ -64,17 +64,21 @@ export function useMenus() {
       custom_url: item.linkType === "custom" ? item.value : null,
       position: item.position ?? (menus[menuKey]?.length || 0),
     };
-    await supabase.from("menu_items").upsert(payload);
+    const { error } = await supabase.from("menu_items").upsert(payload);
+    if (error) throw error;
     await load();
   };
 
   const deleteItem = async (id) => {
-    await supabase.from("menu_items").delete().eq("id", id);
+    const { error } = await supabase.from("menu_items").delete().eq("id", id);
+    if (error) throw error;
     await load();
   };
 
   const reorder = async (updates) => {
-    await Promise.all(updates.map((u) => supabase.from("menu_items").update({ position: u.position }).eq("id", u.id)));
+    const results = await Promise.all(updates.map((u) => supabase.from("menu_items").update({ position: u.position }).eq("id", u.id)));
+    const failed = results.find((r) => r.error);
+    if (failed) throw failed.error;
     await load();
   };
 
