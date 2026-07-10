@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { X, Plus, Trash2, ImagePlus } from "lucide-react";
 import { T, inputStyle, Field, Button, SIZES } from "../lib/theme";
 import { uploadProductImage } from "../lib/uploadImage";
@@ -22,6 +22,14 @@ export default function ProductModal({ product, categories, onClose, onSave }) {
 
   const topCatObj = topCategories.find((c) => c.name === form.topCategory);
   const subCategories = categories.filter((c) => c.parentId === topCatObj?.id);
+
+  // Garante que o valor real (form.category) bate certo com o que aparece visível no
+  // <select> — se estiver vazio ou já não existir na lista atual, assume a primeira opção.
+  useEffect(() => {
+    if (subCategories.length === 0) return;
+    const isValid = subCategories.some((c) => c.name === form.category);
+    if (!isValid) update("category", subCategories[0].name);
+  }, [subCategories.map((c) => c.id).join(","), form.topCategory]); // eslint-disable-line
 
   const update = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const updateVariant = (id, k, v) => setForm((f) => ({ ...f, variants: f.variants.map((va) => (va.id === id ? { ...va, [k]: v } : va)) }));
