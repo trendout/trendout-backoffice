@@ -34,25 +34,29 @@ export function useCategories() {
   useEffect(() => { load(); }, [load]);
 
   const saveCategory = async (cat) => {
-    await supabase.from("categories").upsert({
+    const { error } = await supabase.from("categories").upsert({
       id: cat.id,
       name: cat.name,
       slug: cat.slug || slugify(cat.name),
       parent_id: cat.parentId || null,
       position: cat.position || 0,
     });
+    if (error) throw error;
     await load();
   };
 
   const deleteCategory = async (id) => {
     // elimina também as subcategorias (parent_id = id), como acontece no protótipo
-    await supabase.from("categories").delete().or(`id.eq.${id},parent_id.eq.${id}`);
+    const { error } = await supabase.from("categories").delete().or(`id.eq.${id},parent_id.eq.${id}`);
+    if (error) throw error;
     await load();
   };
 
   const reorder = async (updates) => {
     // updates: [{ id, position }]
-    await Promise.all(updates.map((u) => supabase.from("categories").update({ position: u.position }).eq("id", u.id)));
+    const results = await Promise.all(updates.map((u) => supabase.from("categories").update({ position: u.position }).eq("id", u.id)));
+    const failed = results.find((r) => r.error);
+    if (failed) throw failed.error;
     setCategories((prev) => prev.map((c) => {
       const u = updates.find((x) => x.id === c.id);
       return u ? { ...c, position: u.position } : c;

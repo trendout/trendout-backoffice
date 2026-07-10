@@ -8,6 +8,7 @@ export default function CategoriesPage() {
   const { categories, loading, saveCategory, deleteCategory, reorder } = useCategories();
   const [modal, setModal] = useState(undefined); // { category, isTop, parentId }
   const [deleteId, setDeleteId] = useState(null);
+  const [errorMsg, setErrorMsg] = useState("");
 
   if (loading) return <div style={{ color: T.muted, fontSize: 13.5 }}>A carregar categorias...</div>;
 
@@ -17,15 +18,32 @@ export default function CategoriesPage() {
   const handleSave = async (cat, isTop) => {
     const siblings = categories.filter((c) => c.parentId === (isTop ? null : cat.parentId));
     const exists = categories.some((c) => c.id === cat.id);
-    await saveCategory({ ...cat, position: exists ? cat.position : siblings.length });
-    setModal(undefined);
+    try {
+      await saveCategory({ ...cat, position: exists ? cat.position : siblings.length });
+      setModal(undefined);
+      setErrorMsg("");
+    } catch (err) {
+      setErrorMsg(
+        err.message?.includes("duplicate") || err.code === "23505"
+          ? "Já existe uma categoria com um nome muito parecido (o URL/slug ficaria repetido). Tenta um nome ligeiramente diferente."
+          : err.message || "Erro ao guardar a categoria."
+      );
+    }
   };
 
+  // Reordena renumerando toda a lista de forma sequencial (0,1,2...) — evita que
+  // posições repetidas (que podem existir de dados antigos) façam a troca não ter efeito.
   const move = async (list, idx, dir) => {
     const target = idx + dir;
     if (target < 0 || target >= list.length) return;
-    const a = list[idx], b = list[target];
-    await reorder([{ id: a.id, position: b.position }, { id: b.id, position: a.position }]);
+    const reordered = [...list];
+    [reordered[idx], reordered[target]] = [reordered[target], reordered[idx]];
+    const updates = reordered.map((item, i) => ({ id: item.id, position: i }));
+    try {
+      await reorder(updates);
+    } catch (err) {
+      setErrorMsg(err.message || "Erro ao reordenar.");
+    }
   };
 
   return (
@@ -33,6 +51,8 @@ export default function CategoriesPage() {
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 20 }}>
         <Button onClick={() => setModal({ category: null, isTop: true })}><Plus size={15} /> Nova categoria principal</Button>
       </div>
+
+      {errorMsg && <div style={{ color: T.danger, fontSize: 13, marginBottom: 16 }}>{errorMsg}</div>}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {topCategories.map((top, ti) => {
