@@ -88,9 +88,11 @@ export function useProducts() {
     if (error) throw error;
 
     // Substitui as variantes existentes pelas atuais (simples e seguro para um formulário pequeno)
-    await supabase.from("product_variants").delete().eq("product_id", savedProduct.id);
+    const { error: deleteErr } = await supabase.from("product_variants").delete().eq("product_id", savedProduct.id);
+    if (deleteErr) throw deleteErr;
+
     if (product.variants?.length) {
-      await supabase.from("product_variants").insert(
+      const { error: variantsErr } = await supabase.from("product_variants").insert(
         product.variants.map((v) => ({
           product_id: savedProduct.id,
           size: v.size,
@@ -101,6 +103,7 @@ export function useProducts() {
           sold_recently: v.soldRecently || 0,
         }))
       );
+      if (variantsErr) throw variantsErr;
     }
 
     await load();
