@@ -3,6 +3,7 @@ import { X } from "lucide-react";
 import { T, inputStyle, Field, Button } from "../lib/theme";
 
 export default function MenuItemModal({ item, categories, collections, onClose, onSave }) {
+  const topCategories = categories.filter((c) => !c.parentId);
   const categoryNames = categories.map((c) => c.name);
   const [form, setForm] = useState(item || { id: crypto.randomUUID(), label: "", linkType: "category", value: categoryNames[0] || "" });
 
@@ -37,9 +38,16 @@ export default function MenuItemModal({ item, categories, collections, onClose, 
           </select>
         </Field>
         {form.linkType === "category" && (
-          <Field label="Categoria">
+          <Field label="Categoria ou subcategoria">
             <select style={inputStyle} value={form.value} onChange={(e) => setForm((f) => ({ ...f, value: e.target.value }))}>
-              {categoryNames.map((c) => <option key={c} value={c}>{c}</option>)}
+              {topCategories.map((top) => (
+                <optgroup key={top.id} label={top.name}>
+                  <option value={top.name}>{top.name} (categoria principal)</option>
+                  {categories
+                    .filter((c) => c.parentId === top.id)
+                    .map((sub) => <option key={sub.id} value={sub.name}>—  {sub.name}</option>)}
+                </optgroup>
+              ))}
             </select>
           </Field>
         )}
