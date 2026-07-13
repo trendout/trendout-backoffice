@@ -15,11 +15,13 @@ const THEME_PRESETS = [
 export default function ThemePage() {
   const { settings, loading, updateSettings } = useStoreSettings();
   const [theme, setTheme] = useState(DEFAULT_THEME);
+  const [productsPerCategory, setProductsPerCategory] = useState(8);
   const [saved, setSaved] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
     if (settings?.theme) setTheme(settings.theme);
+    if (settings?.homepageProductsPerCategory) setProductsPerCategory(settings.homepageProductsPerCategory);
   }, [settings]);
 
   if (loading || !settings) return <div style={{ color: T.muted, fontSize: 13.5 }}>A carregar tema...</div>;
@@ -29,7 +31,7 @@ export default function ThemePage() {
 
   const submit = async () => {
     try {
-      await updateSettings({ theme });
+      await updateSettings({ theme, homepageProductsPerCategory: productsPerCategory });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
@@ -103,6 +105,20 @@ export default function ThemePage() {
               </select>
             </Field>
           </div>
+        </div>
+
+        <div style={{ background: T.bgRaised, border: `1px solid ${T.border}`, borderRadius: 12, padding: 24, marginBottom: 16 }}>
+          <div style={{ fontSize: 11.5, color: T.muted, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 14 }}>Layout da homepage</div>
+          <Field label="Produtos mostrados por categoria na homepage">
+            <input
+              style={inputStyle}
+              type="number"
+              min="1"
+              max="20"
+              value={productsPerCategory}
+              onChange={(e) => setProductsPerCategory(Math.max(1, parseInt(e.target.value) || 1))}
+            />
+          </Field>
         </div>
 
         {errorMsg && <div style={{ color: T.danger, fontSize: 13, marginBottom: 10 }}>{errorMsg}</div>}

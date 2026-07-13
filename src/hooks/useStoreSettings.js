@@ -42,6 +42,7 @@ export function useStoreSettings() {
       enableGoogleAds: data.enable_google_ads,
       googleAdsConversionId: data.google_ads_conversion_id || "",
       googleAdsConversionLabel: data.google_ads_conversion_label || "",
+      homepageProductsPerCategory: data.homepage_products_per_category ?? 8,
       theme: data.theme || DEFAULT_THEME,
     });
     setLoading(false);
@@ -75,6 +76,7 @@ export function useStoreSettings() {
       enableGoogleAds: "enable_google_ads",
       googleAdsConversionId: "google_ads_conversion_id",
       googleAdsConversionLabel: "google_ads_conversion_label",
+      homepageProductsPerCategory: "homepage_products_per_category",
       theme: "theme",
     };
     const dbPatch = {};
