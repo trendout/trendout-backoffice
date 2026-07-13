@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Save, Globe, Building2, Code2, CreditCard, Zap, AlertTriangle } from "lucide-react";
+import { Save, Globe, Building2, Code2, CreditCard, Zap, AlertTriangle, Search } from "lucide-react";
 import { T, inputStyle, Field, Button } from "../lib/theme";
 import { useStoreSettings } from "../hooks/useStoreSettings";
 
@@ -39,6 +39,11 @@ export default function SettingsPage() {
         enableMultibanco: form.enableMultibanco,
         multibancoEntity: form.multibancoEntity,
         enableMbway: form.enableMbway,
+        googleMerchantId: form.googleMerchantId,
+        googleSiteVerification: form.googleSiteVerification,
+        enableGoogleAds: form.enableGoogleAds,
+        googleAdsConversionId: form.googleAdsConversionId,
+        googleAdsConversionLabel: form.googleAdsConversionLabel,
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
@@ -197,6 +202,45 @@ export default function SettingsPage() {
             <input type="checkbox" checked={!!form.enableMbway} onChange={(e) => update("enableMbway", e.target.checked)} style={{ accentColor: T.accent }} />
             MB WAY
           </label>
+        </div>
+      </div>
+
+      <div style={{ background: T.bgRaised, border: `1px solid ${T.border}`, borderRadius: 12, padding: 24, marginBottom: 18 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, color: T.muted, fontSize: 12, textTransform: "uppercase", letterSpacing: 0.4 }}>
+          <Search size={14} /> Google Merchant Center & Google Ads
+        </div>
+
+        <p style={{ fontSize: 12.5, color: T.muted, margin: "0 0 18px", lineHeight: 1.6 }}>
+          Nenhum destes valores é secreto — são IDs públicos usados pelo Google para identificar a tua loja.
+          Falta ainda construir o feed de produtos (URL que o Merchant Center vai buscar automaticamente) — isso é o próximo passo depois de preencheres isto.
+        </p>
+
+        <Field label="ID do Merchant Center">
+          <input style={inputStyle} value={form.googleMerchantId || ""} onChange={(e) => update("googleMerchantId", e.target.value)} placeholder="123456789" />
+        </Field>
+
+        <Field label="Meta tag de verificação do domínio (Search Console)">
+          <input style={inputStyle} value={form.googleSiteVerification || ""} onChange={(e) => update("googleSiteVerification", e.target.value)} placeholder="ex: AbCdEfGhIjKlMnOpQrStUvWxYz" />
+        </Field>
+        <p style={{ fontSize: 11.5, color: T.muted, margin: "-10px 0 18px", lineHeight: 1.5 }}>
+          No Search Console, escolhe verificar por "Tag HTML" — cola aqui só o valor do atributo <code>content</code>, não a tag toda.
+        </p>
+
+        <div style={{ borderTop: `1px solid ${T.border}`, paddingTop: 16 }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: T.text, cursor: "pointer", marginBottom: 10 }}>
+            <input type="checkbox" checked={!!form.enableGoogleAds} onChange={(e) => update("enableGoogleAds", e.target.checked)} style={{ accentColor: T.accent }} />
+            Google Ads (rastreio de conversões)
+          </label>
+          {form.enableGoogleAds && (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <Field label="Conversion ID">
+                <input style={inputStyle} value={form.googleAdsConversionId || ""} onChange={(e) => update("googleAdsConversionId", e.target.value)} placeholder="AW-123456789" />
+              </Field>
+              <Field label="Conversion Label">
+                <input style={inputStyle} value={form.googleAdsConversionLabel || ""} onChange={(e) => update("googleAdsConversionLabel", e.target.value)} placeholder="AbCdEfGhIjKlMnOp" />
+              </Field>
+            </div>
+          )}
         </div>
       </div>
 

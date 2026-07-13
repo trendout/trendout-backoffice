@@ -37,6 +37,11 @@ export function useStoreSettings() {
       enableMultibanco: data.enable_multibanco,
       multibancoEntity: data.multibanco_entity || "",
       enableMbway: data.enable_mbway,
+      googleMerchantId: data.google_merchant_id || "",
+      googleSiteVerification: data.google_site_verification || "",
+      enableGoogleAds: data.enable_google_ads,
+      googleAdsConversionId: data.google_ads_conversion_id || "",
+      googleAdsConversionLabel: data.google_ads_conversion_label || "",
       theme: data.theme || DEFAULT_THEME,
     });
     setLoading(false);
@@ -65,6 +70,11 @@ export function useStoreSettings() {
       enableMultibanco: "enable_multibanco",
       multibancoEntity: "multibanco_entity",
       enableMbway: "enable_mbway",
+      googleMerchantId: "google_merchant_id",
+      googleSiteVerification: "google_site_verification",
+      enableGoogleAds: "enable_google_ads",
+      googleAdsConversionId: "google_ads_conversion_id",
+      googleAdsConversionLabel: "google_ads_conversion_label",
       theme: "theme",
     };
     const dbPatch = {};
