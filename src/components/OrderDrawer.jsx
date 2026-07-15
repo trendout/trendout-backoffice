@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { X, CheckCircle2, Truck, Save } from "lucide-react";
+import { X, CheckCircle2, Truck, Save, Send } from "lucide-react";
 import { T, inputStyle, Button } from "../lib/theme";
 import { Badge, STATUS_META } from "../lib/orderStatus";
+import { supabase } from "../lib/supabase";
 
 export default function OrderDrawer({ order, onClose, onUpdateStatus, onMarkAsPaid, onUpdateTrackingCode }) {
   const [trackingInput, setTrackingInput] = useState(order.trackingCode || "");
   const [savedTracking, setSavedTracking] = useState(false);
+  const [notifying, setNotifying] = useState(false);
+  const [notifyResult, setNotifyResult] = useState("");
 
   useEffect(() => {
     setTrackingInput(order.trackingCode || "");
@@ -15,6 +18,14 @@ export default function OrderDrawer({ order, onClose, onUpdateStatus, onMarkAsPa
     await onUpdateTrackingCode(order.id, trackingInput.trim());
     setSavedTracking(true);
     setTimeout(() => setSavedTracking(false), 2000);
+  };
+
+  const notifyShipping = async () => {
+    setNotifying(true);
+    setNotifyResult("");
+    const { error } = await supabase.functions.invoke("send-shipping-notification", { body: { orderId: order.id } });
+    setNotifying(false);
+    setNotifyResult(error ? `Erro: ${error.message}` : "Email enviado ✓");
   };
 
   return (
@@ -76,6 +87,16 @@ export default function OrderDrawer({ order, onClose, onUpdateStatus, onMarkAsPa
           {savedTracking && <div style={{ color: T.accent, fontSize: 12, marginTop: 6 }}>Guardado ✓</div>}
           {order.status === "shipped" && !trackingInput && (
             <div style={{ color: T.warn, fontSize: 12, marginTop: 6 }}>Esta encomenda está marcada como enviada mas ainda sem código de rastreio.</div>
+          )}
+          {trackingInput && (
+            <div style={{ marginTop: 10 }}>
+              <Button variant="ghost" onClick={notifyShipping} disabled={notifying} style={{ fontSize: 12.5, padding: "8px 14px" }}>
+                <Send size={13} /> {notifying ? "A enviar..." : "Notificar cliente do envio"}
+              </Button>
+              {notifyResult && (
+                <div style={{ color: notifyResult.startsWith("Erro") ? T.danger : T.accent, fontSize: 12, marginTop: 6 }}>{notifyResult}</div>
+              )}
+            </div>
           )}
         </div>
 
