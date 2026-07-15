@@ -1,9 +1,22 @@
-import React from "react";
-import { X, CheckCircle2 } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { X, CheckCircle2, Truck, Save } from "lucide-react";
 import { T, inputStyle, Button } from "../lib/theme";
 import { Badge, STATUS_META } from "../lib/orderStatus";
 
-export default function OrderDrawer({ order, onClose, onUpdateStatus, onMarkAsPaid }) {
+export default function OrderDrawer({ order, onClose, onUpdateStatus, onMarkAsPaid, onUpdateTrackingCode }) {
+  const [trackingInput, setTrackingInput] = useState(order.trackingCode || "");
+  const [savedTracking, setSavedTracking] = useState(false);
+
+  useEffect(() => {
+    setTrackingInput(order.trackingCode || "");
+  }, [order.id]);
+
+  const saveTracking = async () => {
+    await onUpdateTrackingCode(order.id, trackingInput.trim());
+    setSavedTracking(true);
+    setTimeout(() => setSavedTracking(false), 2000);
+  };
+
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", justifyContent: "flex-end", zIndex: 200 }}>
       <div style={{ width: "min(420px, 100%)", background: T.bgRaised, borderLeft: `1px solid ${T.border}`, height: "100%", overflowY: "auto", padding: 26 }}>
@@ -43,6 +56,27 @@ export default function OrderDrawer({ order, onClose, onUpdateStatus, onMarkAsPa
             {order.shippingCountry || "—"} · {order.shippingSpeed === "express" ? "Envio Express" : "Envio Standard"}<br />
             Entrega estimada: {order.estimatedDelivery ? new Date(order.estimatedDelivery).toLocaleDateString("pt-PT") : "a calcular"}
           </div>
+        </div>
+
+        <div style={{ marginTop: 18 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: T.muted, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 8 }}>
+            <Truck size={12} /> Código de rastreio
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <input
+              style={inputStyle}
+              value={trackingInput}
+              onChange={(e) => setTrackingInput(e.target.value)}
+              placeholder="ex: CTT123456789PT"
+            />
+            <Button variant="ghost" onClick={saveTracking} style={{ padding: "0 14px", whiteSpace: "nowrap" }}>
+              <Save size={13} /> Guardar
+            </Button>
+          </div>
+          {savedTracking && <div style={{ color: T.accent, fontSize: 12, marginTop: 6 }}>Guardado ✓</div>}
+          {order.status === "shipped" && !trackingInput && (
+            <div style={{ color: T.warn, fontSize: 12, marginTop: 6 }}>Esta encomenda está marcada como enviada mas ainda sem código de rastreio.</div>
+          )}
         </div>
 
         <div style={{ marginTop: 18 }}>

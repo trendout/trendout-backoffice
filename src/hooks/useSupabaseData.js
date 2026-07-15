@@ -231,6 +231,7 @@ export function useOrders() {
         discountAmount: Number(o.discount_amount || 0),
         estimatedDelivery: o.estimated_delivery,
         vatRatePercent: o.vat_rate_percent != null ? Number(o.vat_rate_percent) : null,
+        trackingCode: o.tracking_code || "",
         vatAmount: o.vat_amount != null ? Number(o.vat_amount) : null,
         createdAt: o.created_at,
         subtotal: Number(o.subtotal),
@@ -277,7 +278,13 @@ export function useOrders() {
     setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, paymentStatus: "paid", status: "confirmed" } : o)));
   };
 
-  return { orders, loading, updateStatus, markAsPaid, reload: load };
+  const updateTrackingCode = async (id, trackingCode) => {
+    const { error } = await supabase.from("orders").update({ tracking_code: trackingCode }).eq("id", id);
+    if (error) throw error;
+    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, trackingCode } : o)));
+  };
+
+  return { orders, loading, updateStatus, markAsPaid, updateTrackingCode, reload: load };
 }
 
 function slugify(s) {

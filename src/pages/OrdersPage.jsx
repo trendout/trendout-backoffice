@@ -5,7 +5,7 @@ import { useOrders } from "../hooks/useSupabaseData";
 import OrderDrawer from "../components/OrderDrawer";
 
 export default function OrdersPage() {
-  const { orders, loading, updateStatus, markAsPaid } = useOrders();
+  const { orders, loading, updateStatus, markAsPaid, updateTrackingCode } = useOrders();
   const [filter, setFilter] = useState("all");
   const [selected, setSelected] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
@@ -25,6 +25,15 @@ export default function OrdersPage() {
       setSelected((s) => (s && s.id === id ? { ...s, paymentStatus: "paid", status: "confirmed" } : s));
     } catch (err) {
       setErrorMsg(err.message || "Erro ao marcar como pago.");
+    }
+  };
+
+  const handleUpdateTrackingCode = async (id, trackingCode) => {
+    try {
+      await updateTrackingCode(id, trackingCode);
+      setSelected((s) => (s && s.id === id ? { ...s, trackingCode } : s));
+    } catch (err) {
+      setErrorMsg(err.message || "Erro ao guardar o código de rastreio.");
     }
   };
 
@@ -76,7 +85,7 @@ export default function OrdersPage() {
 
       {errorMsg && <div style={{ color: T.danger, fontSize: 13, marginTop: 12 }}>{errorMsg}</div>}
 
-      {selected && <OrderDrawer order={selected} onClose={() => setSelected(null)} onUpdateStatus={handleUpdateStatus} onMarkAsPaid={handleMarkAsPaid} />}
+      {selected && <OrderDrawer order={selected} onClose={() => setSelected(null)} onUpdateStatus={handleUpdateStatus} onMarkAsPaid={handleMarkAsPaid} onUpdateTrackingCode={handleUpdateTrackingCode} />}
     </div>
   );
 }
