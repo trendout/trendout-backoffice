@@ -57,7 +57,7 @@ export default function CustomersPage() {
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13.5 }}>
           <thead>
             <tr style={{ background: T.bgRaised2, textAlign: "left" }}>
-              {["Cliente", "Email", "Encomendas", "Total gasto", "Newsletter", "Última atividade"].map((h) => (
+              {["Cliente", "Email", "Conta", "Encomendas", "Total gasto", "Newsletter", "Última atividade"].map((h) => (
                 <th key={h} style={{ padding: "12px 16px", color: T.muted, fontWeight: 600, fontSize: 11.5, textTransform: "uppercase", letterSpacing: 0.4 }}>{h}</th>
               ))}
             </tr>
@@ -71,6 +71,15 @@ export default function CustomersPage() {
                   </button>
                 </td>
                 <td style={{ padding: "12px 16px", color: T.muted }}>{c.email}</td>
+                <td style={{ padding: "12px 16px" }}>
+                  {c.hasAccount ? (
+                    <span style={{ fontSize: 11.5, color: c.emailConfirmed ? T.accent : T.warn, border: `1px solid ${c.emailConfirmed ? T.accent : T.warn}55`, borderRadius: 999, padding: "3px 9px" }}>
+                      {c.emailConfirmed ? "Confirmada" : "Por confirmar"}
+                    </span>
+                  ) : (
+                    <span style={{ color: T.muted, fontSize: 12 }}>Convidado</span>
+                  )}
+                </td>
                 <td style={{ padding: "12px 16px" }}>{c.orderCount}</td>
                 <td style={{ padding: "12px 16px", color: c.totalSpent > 0 ? T.accent : T.muted, fontWeight: c.totalSpent > 0 ? 600 : 400 }}>€{c.totalSpent.toFixed(2)}</td>
                 <td style={{ padding: "12px 16px" }}>
@@ -88,7 +97,7 @@ export default function CustomersPage() {
               </tr>
             ))}
             {filtered.length === 0 && (
-              <tr><td colSpan={6} style={{ padding: 28, textAlign: "center", color: T.muted }}>Sem clientes encontrados.</td></tr>
+              <tr><td colSpan={7} style={{ padding: 28, textAlign: "center", color: T.muted }}>Sem clientes encontrados.</td></tr>
             )}
           </tbody>
         </table>

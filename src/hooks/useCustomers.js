@@ -34,6 +34,8 @@ export function useCustomers() {
           lastOrderDate: o.created_at,
           firstSeen: o.created_at,
           isNewsletterSubscriber: false,
+          hasAccount: false,
+          emailConfirmed: false,
         };
       }
       map[key].orderCount += 1;
@@ -55,11 +57,46 @@ export function useCustomers() {
           lastOrderDate: null,
           firstSeen: s.subscribed_at,
           isNewsletterSubscriber: s.active !== false,
+          hasAccount: false,
+          emailConfirmed: false,
         };
       } else {
         map[key].isNewsletterSubscriber = s.active !== false;
       }
     });
+
+    // contas registadas na loja (mesmo sem nunca terem comprado nada)
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data: usersData, error: usersErr } = await supabase.functions.invoke("list-auth-users");
+        if (!usersErr && usersData?.users) {
+          usersData.users.forEach((u) => {
+            const key = u.email.toLowerCase();
+            if (!map[key]) {
+              map[key] = {
+                email: u.email,
+                name: "",
+                customerId: u.id,
+                orderCount: 0,
+                totalSpent: 0,
+                lastOrderDate: null,
+                firstSeen: u.createdAt,
+                isNewsletterSubscriber: false,
+                hasAccount: true,
+                emailConfirmed: u.emailConfirmed,
+              };
+            } else {
+              map[key].hasAccount = true;
+              map[key].emailConfirmed = u.emailConfirmed;
+              if (!map[key].customerId) map[key].customerId = u.id;
+            }
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Erro ao carregar contas registadas:", err.message);
+    }
 
     setCustomers(Object.values(map));
     setLoading(false);
