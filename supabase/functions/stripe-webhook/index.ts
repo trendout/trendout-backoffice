@@ -58,6 +58,21 @@ Deno.serve(async (req) => {
           card_last4: last4,
         })
         .eq("id", orderId);
+
+      // Avisa o cliente e a admin por email — se falhar, não interrompe o webhook
+      try {
+        await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-order-emails`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+            apikey: Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+          },
+          body: JSON.stringify({ orderId }),
+        });
+      } catch (err) {
+        console.error("Falha ao enviar emails da encomenda:", err.message);
+      }
     }
   }
 

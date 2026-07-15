@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Save, Globe, Building2, Code2, CreditCard, Zap, AlertTriangle, Search } from "lucide-react";
+import { Save, Globe, Building2, Code2, CreditCard, Zap, AlertTriangle, Search, Wrench, Megaphone } from "lucide-react";
 import { T, inputStyle, Field, Button } from "../lib/theme";
 import { useStoreSettings } from "../hooks/useStoreSettings";
 
@@ -35,6 +35,10 @@ export default function SettingsPage() {
         companyIban: form.companyIban,
         paymentMethodsAccepted: form.paymentMethodsAccepted,
         enableStripe: form.enableStripe,
+        maintenanceModeEnabled: form.maintenanceModeEnabled,
+        maintenanceMessage: form.maintenanceMessage,
+        announcementEnabled: form.announcementEnabled,
+        announcementMessage: form.announcementMessage,
         stripePublishableKey: form.stripePublishableKey,
         enableMultibanco: form.enableMultibanco,
         multibancoEntity: form.multibancoEntity,
@@ -54,6 +58,52 @@ export default function SettingsPage() {
 
   return (
     <div style={{ maxWidth: 640 }}>
+      <div style={{ background: T.bgRaised, border: `1px solid ${T.danger}55`, borderRadius: 12, padding: 24, marginBottom: 18 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 18, color: T.muted, fontSize: 12, textTransform: "uppercase", letterSpacing: 0.4 }}>
+          <Wrench size={14} /> Estado da loja
+        </div>
+
+        <div style={{ borderBottom: `1px solid ${T.border}`, paddingBottom: 18, marginBottom: 18 }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: T.text, cursor: "pointer", marginBottom: 10 }}>
+            <input type="checkbox" checked={!!form.maintenanceModeEnabled} onChange={(e) => update("maintenanceModeEnabled", e.target.checked)} style={{ accentColor: T.danger }} />
+            Modo de manutenção — bloqueia a loja por completo
+          </label>
+          <p style={{ fontSize: 11.5, color: T.muted, margin: "0 0 10px", lineHeight: 1.5 }}>
+            Cobre a loja toda com um ecrã escuro (50% transparente) e a mensagem abaixo — ninguém consegue navegar ou comprar enquanto estiver ativo.
+          </p>
+          {form.maintenanceModeEnabled && (
+            <Field label="Mensagem de manutenção">
+              <textarea
+                style={{ ...inputStyle, minHeight: 70, resize: "vertical" }}
+                value={form.maintenanceMessage || ""}
+                onChange={(e) => update("maintenanceMessage", e.target.value)}
+                placeholder="A loja está em atualização e manutenção. Voltamos em breve!"
+              />
+            </Field>
+          )}
+        </div>
+
+        <div>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: T.text, cursor: "pointer", marginBottom: 10 }}>
+            <input type="checkbox" checked={!!form.announcementEnabled} onChange={(e) => update("announcementEnabled", e.target.checked)} style={{ accentColor: T.accent }} />
+            Aviso personalizado — faixa no topo, não bloqueia a compra
+          </label>
+          <p style={{ fontSize: 11.5, color: T.muted, margin: "0 0 10px", lineHeight: 1.5 }}>
+            Para avisos tipo férias, promoções, ou horários especiais — a loja continua a funcionar normalmente.
+          </p>
+          {form.announcementEnabled && (
+            <Field label="Texto do aviso">
+              <textarea
+                style={{ ...inputStyle, minHeight: 60, resize: "vertical" }}
+                value={form.announcementMessage || ""}
+                onChange={(e) => update("announcementMessage", e.target.value)}
+                placeholder="A Trendout está de férias — de 10-08-2026 a 20-08-2026. A vida é uma filosofia, pratica-a!"
+              />
+            </Field>
+          )}
+        </div>
+      </div>
+
       <div style={{ background: T.bgRaised, border: `1px solid ${T.border}`, borderRadius: 12, padding: 24, marginBottom: 18 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 18, color: T.muted, fontSize: 12, textTransform: "uppercase", letterSpacing: 0.4 }}>
           <Globe size={14} /> Domínio & identidade
