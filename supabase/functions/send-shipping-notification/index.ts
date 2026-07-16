@@ -17,7 +17,7 @@ const LOGO_URL = `${Deno.env.get("SUPABASE_URL")}/storage/v1/object/public/produ
 function emailHtml(order: any, storeName: string) {
   // CTT é a transportadora mais comum em Portugal — se um dia usares outra,
   // troca este link (ou remove a secção) por um mais adequado.
-  const trackingUrl = `https://www.ctt.pt/particulares/encomendas/seguimento-envios?objects=${encodeURIComponent(order.tracking_code)}`;
+  const trackingUrl = `https://appserver2.ctt.pt/feapl_2/app/open/objectSearch/objectSearch.jspx?lang=def&objects=${encodeURIComponent(order.tracking_code)}`;
 
   return `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; background:#f4f4f4; padding:24px 0;">

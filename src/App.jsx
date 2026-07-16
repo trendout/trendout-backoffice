@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { LogOut, Package, Folder, ShoppingBag, Layers, Tag, FileText, Menu as MenuIcon, Palette, BarChart3, Settings, Image, Percent, Users } from "lucide-react";
+import { LogOut, Package, Folder, ShoppingBag, Layers, Tag, FileText, Menu as MenuIcon, Palette, BarChart3, Settings, Image, Percent, Users, Radio } from "lucide-react";
 import { useAuth } from "./hooks/useAuth";
 import { T } from "./lib/theme";
 import ProductsPage from "./pages/ProductsPage";
@@ -12,6 +12,7 @@ import PagesPage from "./pages/PagesPage";
 import NavigationPage from "./pages/NavigationPage";
 import ThemePage from "./pages/ThemePage";
 import AnalyticsPage from "./pages/AnalyticsPage";
+import LiveVisitorsPage from "./pages/LiveVisitorsPage";
 import SettingsPage from "./pages/SettingsPage";
 import HeroSlidesPage from "./pages/HeroSlidesPage";
 import VatRatesPage from "./pages/VatRatesPage";
@@ -28,6 +29,7 @@ const NAV = [
   { key: "hero", label: "Hero", icon: Image },
   { key: "theme", label: "Tema", icon: Palette },
   { key: "analytics", label: "Análises", icon: BarChart3 },
+  { key: "live", label: "Visitas ao Vivo", icon: Radio },
   { key: "orders", label: "Encomendas", icon: ShoppingBag },
   { key: "customers", label: "Clientes", icon: Users },
   { key: "vat", label: "IVA por mercado", icon: Percent },
@@ -150,6 +152,7 @@ export default function App() {
           : page === "hero" ? <HeroSlidesPage />
           : page === "theme" ? <ThemePage />
           : page === "analytics" ? <AnalyticsPage />
+          : page === "live" ? <LiveVisitorsPage />
           : page === "vat" ? <VatRatesPage />
           : page === "customers" ? <CustomersPage />
           : page === "settings" ? <SettingsPage />
