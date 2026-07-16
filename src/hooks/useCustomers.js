@@ -98,6 +98,24 @@ export function useCustomers() {
       console.error("Erro ao carregar contas registadas:", err.message);
     }
 
+    // saldo de pontos de fidelização (soma de tudo o que cada cliente ganhou/gastou)
+    try {
+      const { data: pointsData, error: pointsErr } = await supabase.from("points_ledger").select("customer_id, points");
+      if (!pointsErr && pointsData) {
+        const balanceByCustomer = {};
+        pointsData.forEach((p) => {
+          balanceByCustomer[p.customer_id] = (balanceByCustomer[p.customer_id] || 0) + p.points;
+        });
+        Object.values(map).forEach((c) => {
+          if (c.customerId && balanceByCustomer[c.customerId] != null) {
+            c.pointsBalance = balanceByCustomer[c.customerId];
+          }
+        });
+      }
+    } catch (err) {
+      console.error("Erro ao carregar saldo de pontos:", err.message);
+    }
+
     setCustomers(Object.values(map));
     setLoading(false);
   }, []);

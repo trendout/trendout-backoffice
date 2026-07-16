@@ -57,7 +57,7 @@ export default function CustomersPage() {
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13.5 }}>
           <thead>
             <tr style={{ background: T.bgRaised2, textAlign: "left" }}>
-              {["Cliente", "Email", "Conta", "Encomendas", "Total gasto", "Newsletter", "Última atividade"].map((h) => (
+              {["Cliente", "Email", "Conta", "Encomendas", "Total gasto", "Pontos", "Newsletter", "Última atividade"].map((h) => (
                 <th key={h} style={{ padding: "12px 16px", color: T.muted, fontWeight: 600, fontSize: 11.5, textTransform: "uppercase", letterSpacing: 0.4 }}>{h}</th>
               ))}
             </tr>
@@ -82,6 +82,7 @@ export default function CustomersPage() {
                 </td>
                 <td style={{ padding: "12px 16px" }}>{c.orderCount}</td>
                 <td style={{ padding: "12px 16px", color: c.totalSpent > 0 ? T.accent : T.muted, fontWeight: c.totalSpent > 0 ? 600 : 400 }}>€{c.totalSpent.toFixed(2)}</td>
+                <td style={{ padding: "12px 16px", color: (c.pointsBalance || 0) > 0 ? T.accent : T.muted }}>{c.pointsBalance || 0}</td>
                 <td style={{ padding: "12px 16px" }}>
                   {c.isNewsletterSubscriber ? (
                     <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11.5, color: T.accent, background: "rgba(201,255,63,0.1)", border: `1px solid ${T.accent}55`, borderRadius: 999, padding: "3px 9px" }}>
@@ -97,7 +98,7 @@ export default function CustomersPage() {
               </tr>
             ))}
             {filtered.length === 0 && (
-              <tr><td colSpan={7} style={{ padding: 28, textAlign: "center", color: T.muted }}>Sem clientes encontrados.</td></tr>
+              <tr><td colSpan={8} style={{ padding: 28, textAlign: "center", color: T.muted }}>Sem clientes encontrados.</td></tr>
             )}
           </tbody>
         </table>

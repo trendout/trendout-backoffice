@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Save, Globe, Building2, Code2, CreditCard, Zap, AlertTriangle, Search, Wrench, Megaphone } from "lucide-react";
+import { Save, Globe, Building2, Code2, CreditCard, Zap, AlertTriangle, Search, Wrench, Megaphone, Gift } from "lucide-react";
 import { T, inputStyle, Field, Button } from "../lib/theme";
 import { useStoreSettings } from "../hooks/useStoreSettings";
 
@@ -39,6 +39,9 @@ export default function SettingsPage() {
         maintenanceMessage: form.maintenanceMessage,
         announcementEnabled: form.announcementEnabled,
         announcementMessage: form.announcementMessage,
+        loyaltyPointsEnabled: form.loyaltyPointsEnabled,
+        pointsPerEuroSpent: form.pointsPerEuroSpent,
+        pointsPerEuroDiscount: form.pointsPerEuroDiscount,
         stripePublishableKey: form.stripePublishableKey,
         enableMultibanco: form.enableMultibanco,
         multibancoEntity: form.multibancoEntity,
@@ -124,6 +127,36 @@ export default function SettingsPage() {
             <input style={inputStyle} type="number" step="0.01" value={form.freeShippingThreshold ?? ""} onChange={(e) => update("freeShippingThreshold", e.target.value)} />
           </Field>
         </div>
+      </div>
+
+      <div style={{ background: T.bgRaised, border: `1px solid ${T.border}`, borderRadius: 12, padding: 24, marginBottom: 18 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 18, color: T.muted, fontSize: 12, textTransform: "uppercase", letterSpacing: 0.4 }}>
+          <Gift size={14} /> Programa de pontos
+        </div>
+
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: T.text, cursor: "pointer", marginBottom: 14 }}>
+          <input type="checkbox" checked={!!form.loyaltyPointsEnabled} onChange={(e) => update("loyaltyPointsEnabled", e.target.checked)} style={{ accentColor: T.accent }} />
+          Ativar programa de pontos
+        </label>
+
+        {form.loyaltyPointsEnabled && (
+          <>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <Field label="Pontos ganhos por cada €1 gasto">
+                <input style={inputStyle} type="number" min="0" value={form.pointsPerEuroSpent ?? 2} onChange={(e) => update("pointsPerEuroSpent", parseInt(e.target.value) || 0)} />
+              </Field>
+              <Field label="Pontos necessários para €1 de desconto">
+                <input style={inputStyle} type="number" min="1" value={form.pointsPerEuroDiscount ?? 100} onChange={(e) => update("pointsPerEuroDiscount", parseInt(e.target.value) || 1)} />
+              </Field>
+            </div>
+            <p style={{ fontSize: 11.5, color: T.muted, margin: "0 0 0", lineHeight: 1.6 }}>
+              Com estes valores: gastar €150 dá {150 * (form.pointsPerEuroSpent || 2)} pontos, equivalentes a
+              €{(150 * (form.pointsPerEuroSpent || 2) / (form.pointsPerEuroDiscount || 100)).toFixed(2)} de desconto numa compra futura
+              ({(((form.pointsPerEuroSpent || 2) / (form.pointsPerEuroDiscount || 100)) * 100).toFixed(1)}% de retorno).
+              Só clientes com sessão iniciada acumulam pontos — compras como convidado não contam.
+            </p>
+          </>
+        )}
       </div>
 
       <div style={{ background: T.bgRaised, border: `1px solid ${T.border}`, borderRadius: 12, padding: 24, marginBottom: 18 }}>

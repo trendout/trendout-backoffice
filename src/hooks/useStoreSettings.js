@@ -47,6 +47,9 @@ export function useStoreSettings() {
       maintenanceMessage: data.maintenance_message || "",
       announcementEnabled: data.announcement_enabled,
       announcementMessage: data.announcement_message || "",
+      loyaltyPointsEnabled: data.loyalty_points_enabled,
+      pointsPerEuroSpent: data.points_per_euro_spent ?? 2,
+      pointsPerEuroDiscount: data.points_per_euro_discount ?? 100,
       theme: data.theme || DEFAULT_THEME,
     });
     setLoading(false);
@@ -85,6 +88,9 @@ export function useStoreSettings() {
       maintenanceMessage: "maintenance_message",
       announcementEnabled: "announcement_enabled",
       announcementMessage: "announcement_message",
+      loyaltyPointsEnabled: "loyalty_points_enabled",
+      pointsPerEuroSpent: "points_per_euro_spent",
+      pointsPerEuroDiscount: "points_per_euro_discount",
       theme: "theme",
     };
     const dbPatch = {};
