@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { X, CheckCircle2, Truck, Save, Send } from "lucide-react";
+import { X, CheckCircle2, Truck, Save, Send, Printer } from "lucide-react";
 import { T, inputStyle, Button } from "../lib/theme";
 import { Badge, STATUS_META } from "../lib/orderStatus";
 import { supabase } from "../lib/supabase";
+import { generateOrderPdf } from "../lib/orderPdf";
 
 export default function OrderDrawer({ order, onClose, onUpdateStatus, onMarkAsPaid, onUpdateTrackingCode }) {
   const [trackingInput, setTrackingInput] = useState(order.trackingCode || "");
@@ -38,7 +39,16 @@ export default function OrderDrawer({ order, onClose, onUpdateStatus, onMarkAsPa
               {order.createdAt ? new Date(order.createdAt).toLocaleDateString("pt-PT", { day: "2-digit", month: "long", year: "numeric" }) : "—"}
             </div>
           </div>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: T.muted, cursor: "pointer" }}><X size={20} /></button>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <button
+              onClick={() => generateOrderPdf(order)}
+              title="Gerar PDF da encomenda para colar na embalagem"
+              style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: `1px solid ${T.border}`, borderRadius: 8, color: T.text, padding: "7px 12px", cursor: "pointer", fontSize: 12.5 }}
+            >
+              <Printer size={14} /> PDF
+            </button>
+            <button onClick={onClose} style={{ background: "none", border: "none", color: T.muted, cursor: "pointer" }}><X size={20} /></button>
+          </div>
         </div>
 
         <Badge status={order.status} />
