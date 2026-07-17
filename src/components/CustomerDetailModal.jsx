@@ -1,11 +1,11 @@
 import React from "react";
-import { X, MapPin, Mail } from "lucide-react";
+import { X, MapPin, Mail, Heart } from "lucide-react";
 import { T } from "../lib/theme";
 import { Badge } from "../lib/orderStatus";
 import { useCustomerDetail } from "../hooks/useCustomerDetail";
 
 export default function CustomerDetailModal({ customer, onClose }) {
-  const { addresses, orders, loading } = useCustomerDetail(customer.email, customer.customerId);
+  const { addresses, orders, favorites, loading } = useCustomerDetail(customer.email, customer.customerId);
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-start", justifyContent: "center", zIndex: 200, padding: "40px 16px", overflowY: "auto" }}>
@@ -62,6 +62,31 @@ export default function CustomerDetailModal({ customer, onClose }) {
                       <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
                         {a.isDefaultShipping && <span style={{ fontSize: 10, color: T.accent, border: `1px solid ${T.accent}55`, borderRadius: 999, padding: "2px 7px" }}>Entrega</span>}
                         {a.isDefaultBilling && <span style={{ fontSize: 10, color: T.warn, border: `1px solid ${T.warn}55`, borderRadius: 999, padding: "2px 7px" }}>Faturação</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div style={{ marginBottom: 22 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: T.muted, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 10 }}>
+                <Heart size={12} /> Produtos favoritos
+              </div>
+              {favorites.length === 0 ? (
+                <div style={{ color: T.muted, fontSize: 13, background: T.bg, border: `1px solid ${T.border}`, borderRadius: 8, padding: 14, textAlign: "center" }}>
+                  Sem produtos favoritos.
+                </div>
+              ) : (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  {favorites.map((f) => (
+                    <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 10, background: T.bg, border: `1px solid ${T.border}`, borderRadius: 8, padding: 10 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: 6, overflow: "hidden", background: T.bgRaised2, flexShrink: 0 }}>
+                        {f.image && <img src={f.image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 12.5, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{f.name}</div>
+                        <div style={{ fontSize: 12, color: T.accent }}>€{f.basePrice.toFixed(2)}</div>
                       </div>
                     </div>
                   ))}

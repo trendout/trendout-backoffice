@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabase";
 export function useCustomerDetail(email, customerId) {
   const [addresses, setAddresses] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -22,7 +23,11 @@ export function useCustomerDetail(email, customerId) {
         ? supabase.from("customer_addresses").select("*").eq("customer_id", customerId)
         : Promise.resolve({ data: [] });
 
-      const [{ data: ordersData }, { data: addressesData }] = await Promise.all([ordersPromise, addressesPromise]);
+      const favoritesPromise = customerId
+        ? supabase.from("favorites").select("created_at, products(id, name, slug, base_price, images)").eq("customer_id", customerId).order("created_at", { ascending: false })
+        : Promise.resolve({ data: [] });
+
+      const [{ data: ordersData }, { data: addressesData }, { data: favoritesData }] = await Promise.all([ordersPromise, addressesPromise, favoritesPromise]);
 
       if (cancelled) return;
 
@@ -53,6 +58,18 @@ export function useCustomerDetail(email, customerId) {
         }))
       );
 
+      setFavorites(
+        (favoritesData || [])
+          .filter((f) => f.products)
+          .map((f) => ({
+            id: f.products.id,
+            name: f.products.name,
+            slug: f.products.slug,
+            basePrice: Number(f.products.base_price),
+            image: f.products.images?.[0] || null,
+          }))
+      );
+
       setLoading(false);
     }
 
@@ -60,5 +77,5 @@ export function useCustomerDetail(email, customerId) {
     return () => { cancelled = true; };
   }, [email, customerId]);
 
-  return { addresses, orders, loading };
+  return { addresses, orders, favorites, loading };
 }
