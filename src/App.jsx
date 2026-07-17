@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { LogOut, Package, Folder, ShoppingBag, Layers, Tag, FileText, Menu as MenuIcon, Palette, BarChart3, Settings, Image, Percent, Users, Radio } from "lucide-react";
+import { LogOut, Package, Folder, ShoppingBag, ShoppingCart, Layers, Tag, FileText, Menu as MenuIcon, Palette, BarChart3, Settings, Image, Percent, Users, Radio } from "lucide-react";
 import { useAuth } from "./hooks/useAuth";
 import { T } from "./lib/theme";
 import ProductsPage from "./pages/ProductsPage";
 import CategoriesPage from "./pages/CategoriesPage";
 import OrdersPage from "./pages/OrdersPage";
+import AbandonedCartsPage from "./pages/AbandonedCartsPage";
 import CustomersPage from "./pages/CustomersPage";
 import CollectionsPage from "./pages/CollectionsPage";
 import CouponsPage from "./pages/CouponsPage";
@@ -31,6 +32,7 @@ const NAV = [
   { key: "analytics", label: "Análises", icon: BarChart3 },
   { key: "live", label: "Visitas ao Vivo", icon: Radio },
   { key: "orders", label: "Encomendas", icon: ShoppingBag },
+  { key: "abandoned-carts", label: "Carrinhos Abandonados", icon: ShoppingCart },
   { key: "customers", label: "Clientes", icon: Users },
   { key: "vat", label: "IVA por mercado", icon: Percent },
   { key: "settings", label: "Definições", icon: Settings },
@@ -156,6 +158,8 @@ export default function App() {
           : page === "vat" ? <VatRatesPage />
           : page === "customers" ? <CustomersPage />
           : page === "settings" ? <SettingsPage />
+          : page === "abandoned-carts" ? <AbandonedCartsPage />
+          : page === "orders" ? <OrdersPage />
           : <OrdersPage />}
       </main>
     </div>
