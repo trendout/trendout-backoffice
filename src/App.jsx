@@ -32,7 +32,7 @@ const NAV = [
   { key: "analytics", label: "Análises", icon: BarChart3 },
   { key: "live", label: "Visitas ao Vivo", icon: Radio },
   { key: "orders", label: "Encomendas", icon: ShoppingBag },
-  { key: "abandoned-carts", label: "Carrinhos Abandonados", icon: ShoppingCart },
+  { key: "abandoned-carts", label: "Abandonados", icon: ShoppingCart },
   { key: "customers", label: "Clientes", icon: Users },
   { key: "vat", label: "IVA por mercado", icon: Percent },
   { key: "settings", label: "Definições", icon: Settings },
