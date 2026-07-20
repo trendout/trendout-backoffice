@@ -1,14 +1,17 @@
 import React, { useState, useMemo } from "react";
-import { Search, Mail, ArrowUpDown } from "lucide-react";
-import { T, inputStyle } from "../lib/theme";
+import { Search, Mail, ArrowUpDown, Download, Upload } from "lucide-react";
+import { T, inputStyle, Button } from "../lib/theme";
 import { useCustomers } from "../hooks/useCustomers";
 import CustomerDetailModal from "../components/CustomerDetailModal";
+import ImportNewsletterModal from "../components/ImportNewsletterModal";
+import { exportCustomersCsv } from "../lib/csvUtils";
 
 export default function CustomersPage() {
-  const { customers, loading } = useCustomers();
+  const { customers, loading, reload } = useCustomers();
   const [query, setQuery] = useState("");
   const [sortOrder, setSortOrder] = useState("recent"); // 'recent' | 'oldest'
   const [selected, setSelected] = useState(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -51,6 +54,10 @@ export default function CustomersPage() {
         >
           <ArrowUpDown size={14} /> {sortOrder === "recent" ? "Mais recentes primeiro" : "Mais antigos primeiro"}
         </button>
+        <div style={{ display: "flex", gap: 10 }}>
+          <Button variant="ghost" onClick={() => setImportOpen(true)}><Upload size={14} /> Importar newsletter</Button>
+          <Button variant="ghost" onClick={() => exportCustomersCsv(filtered)}><Download size={14} /> Exportar CSV</Button>
+        </div>
       </div>
 
       <div style={{ background: T.bgRaised, border: `1px solid ${T.border}`, borderRadius: 12, overflow: "hidden" }}>
@@ -105,6 +112,7 @@ export default function CustomersPage() {
       </div>
 
       {selected && <CustomerDetailModal customer={selected} onClose={() => setSelected(null)} />}
+      {importOpen && <ImportNewsletterModal onClose={() => setImportOpen(false)} onDone={reload} />}
     </div>
   );
 }
