@@ -56,7 +56,8 @@ async function sendOne(resendKey: string, to: string, subject: string, html: str
     headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({ from: FROM_ADDRESS, to, subject, html }),
   });
-  return res.ok;
+  const text = await res.text();
+  return { ok: res.ok, status: res.status, body: text };
 }
 
 async function sendBatch(resendKey: string, emails: { to: string; subject: string; html: string }[]) {
@@ -65,7 +66,8 @@ async function sendBatch(resendKey: string, emails: { to: string; subject: strin
     headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
     body: JSON.stringify(emails.map((e) => ({ from: FROM_ADDRESS, to: e.to, subject: e.subject, html: e.html }))),
   });
-  return res.ok;
+  const text = await res.text();
+  return { ok: res.ok, status: res.status, body: text };
 }
 
 Deno.serve(async (req) => {
@@ -87,8 +89,8 @@ Deno.serve(async (req) => {
     if (mode === "single") {
       if (!toEmail) throw new Error("Falta o email do cliente.");
       const html = emailHtml(storeName, message, null);
-      const ok = await sendOne(resendKey, toEmail, subject, html);
-      if (!ok) throw new Error("O Resend recusou o envio.");
+      const result = await sendOne(resendKey, toEmail, subject, html);
+      if (!result.ok) throw new Error(`O Resend recusou o envio (status ${result.status}): ${result.body}`);
 
       await supabase.from("newsletter_subscribers").update({ last_contacted_at: new Date().toISOString() }).eq("email", toEmail);
 
@@ -117,6 +119,7 @@ Deno.serve(async (req) => {
 
       let sent = 0;
       const sentEmails: string[] = [];
+      const batchErrors: string[] = [];
       const BATCH_SIZE = 90; // margem por baixo do limite de 100 do Resend por pedido
       for (let i = 0; i < (subs || []).length; i += BATCH_SIZE) {
         const batch = (subs || []).slice(i, i + BATCH_SIZE);
@@ -125,10 +128,12 @@ Deno.serve(async (req) => {
           subject,
           html: emailHtml(storeName, message, `${Deno.env.get("SUPABASE_URL")}/functions/v1/unsubscribe?token=${s.unsubscribe_token}`),
         }));
-        const ok = await sendBatch(resendKey, emailPayloads);
-        if (ok) {
+        const result = await sendBatch(resendKey, emailPayloads);
+        if (result.ok) {
           sent += batch.length;
           sentEmails.push(...batch.map((s) => s.email));
+        } else {
+          batchErrors.push(`status ${result.status}: ${result.body}`);
         }
       }
 
@@ -144,7 +149,12 @@ Deno.serve(async (req) => {
         }
       }
 
-      return new Response(JSON.stringify({ sent, total: (subs || []).length, updateError: updateErrorMsg, debugSentEmails: sentEmails }), {
+      return new Response(JSON.stringify({
+        sent,
+        total: (subs || []).length,
+        updateError: updateErrorMsg,
+        sendErrors: batchErrors.length > 0 ? batchErrors : null,
+      }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
