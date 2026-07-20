@@ -55,6 +55,11 @@ export default function SendMessageModal({ mode, customer, subscriberCount, sele
             <p style={{ fontSize: 14, color: T.accent, marginBottom: 20 }}>
               {mode === "single" ? "Email enviado ✓" : `Enviado a ${result.sent} de ${result.total} contactos ✓`}
             </p>
+            {result.updateError && (
+              <p style={{ fontSize: 12.5, color: T.warn, marginBottom: 20 }}>
+                ⚠ O envio funcionou, mas não foi possível marcar como "contactado": {result.updateError}
+              </p>
+            )}
             <Button onClick={onClose} style={{ width: "100%" }}>Fechar</Button>
           </div>
         ) : (

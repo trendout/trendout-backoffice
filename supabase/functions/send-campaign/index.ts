@@ -132,14 +132,19 @@ Deno.serve(async (req) => {
         }
       }
 
+      let updateErrorMsg = null;
       if (sentEmails.length > 0) {
-        await supabase
+        const { error: updateErr } = await supabase
           .from("newsletter_subscribers")
           .update({ last_contacted_at: new Date().toISOString() })
           .in("email", sentEmails);
+        if (updateErr) {
+          console.error("Erro ao marcar como contactado:", updateErr.message);
+          updateErrorMsg = updateErr.message;
+        }
       }
 
-      return new Response(JSON.stringify({ sent, total: (subs || []).length }), {
+      return new Response(JSON.stringify({ sent, total: (subs || []).length, updateError: updateErrorMsg }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
