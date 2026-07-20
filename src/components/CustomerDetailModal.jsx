@@ -1,11 +1,13 @@
-import React from "react";
-import { X, MapPin, Mail, Heart } from "lucide-react";
-import { T } from "../lib/theme";
+import React, { useState } from "react";
+import { X, MapPin, Mail, Heart, Send } from "lucide-react";
+import { T, Button } from "../lib/theme";
 import { Badge } from "../lib/orderStatus";
 import { useCustomerDetail } from "../hooks/useCustomerDetail";
+import SendMessageModal from "./SendMessageModal";
 
 export default function CustomerDetailModal({ customer, onClose }) {
   const { addresses, orders, favorites, loading } = useCustomerDetail(customer.email, customer.customerId);
+  const [sendOpen, setSendOpen] = useState(false);
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-start", justifyContent: "center", zIndex: 200, padding: "40px 16px", overflowY: "auto" }}>
@@ -17,6 +19,10 @@ export default function CustomerDetailModal({ customer, onClose }) {
           </div>
           <button onClick={onClose} style={{ background: "none", border: "none", color: T.muted, cursor: "pointer" }}><X size={20} /></button>
         </div>
+
+        <Button variant="ghost" onClick={() => setSendOpen(true)} style={{ marginBottom: 18 }}>
+          <Send size={13} /> Enviar mensagem a este cliente
+        </Button>
 
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 22 }}>
           <div style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: 8, padding: "10px 16px", flex: "1 1 120px" }}>
@@ -118,6 +124,14 @@ export default function CustomerDetailModal({ customer, onClose }) {
           </>
         )}
       </div>
+
+      {sendOpen && (
+        <SendMessageModal
+          mode="single"
+          customer={{ ...customer, favoriteNames: favorites.map((f) => f.name) }}
+          onClose={() => setSendOpen(false)}
+        />
+      )}
     </div>
   );
 }

@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from "react";
-import { Search, Mail, ArrowUpDown, Download, Upload } from "lucide-react";
+import { Search, Mail, ArrowUpDown, Download, Upload, Send } from "lucide-react";
 import { T, inputStyle, Button } from "../lib/theme";
 import { useCustomers } from "../hooks/useCustomers";
 import CustomerDetailModal from "../components/CustomerDetailModal";
 import ImportNewsletterModal from "../components/ImportNewsletterModal";
+import SendMessageModal from "../components/SendMessageModal";
 import { exportCustomersCsv } from "../lib/csvUtils";
 
 export default function CustomersPage() {
@@ -12,6 +13,7 @@ export default function CustomersPage() {
   const [sortOrder, setSortOrder] = useState("recent"); // 'recent' | 'oldest'
   const [selected, setSelected] = useState(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [campaignOpen, setCampaignOpen] = useState(false);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -55,6 +57,7 @@ export default function CustomersPage() {
           <ArrowUpDown size={14} /> {sortOrder === "recent" ? "Mais recentes primeiro" : "Mais antigos primeiro"}
         </button>
         <div style={{ display: "flex", gap: 10 }}>
+          <Button variant="ghost" onClick={() => setCampaignOpen(true)}><Send size={14} /> Enviar campanha</Button>
           <Button variant="ghost" onClick={() => setImportOpen(true)}><Upload size={14} /> Importar newsletter</Button>
           <Button variant="ghost" onClick={() => exportCustomersCsv(filtered)}><Download size={14} /> Exportar CSV</Button>
         </div>
@@ -113,6 +116,13 @@ export default function CustomersPage() {
 
       {selected && <CustomerDetailModal customer={selected} onClose={() => setSelected(null)} />}
       {importOpen && <ImportNewsletterModal onClose={() => setImportOpen(false)} onDone={reload} />}
+      {campaignOpen && (
+        <SendMessageModal
+          mode="broadcast"
+          subscriberCount={totalNewsletter}
+          onClose={() => setCampaignOpen(false)}
+        />
+      )}
     </div>
   );
 }
