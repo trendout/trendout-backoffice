@@ -5,7 +5,7 @@ import { Badge } from "../lib/orderStatus";
 import { useCustomerDetail } from "../hooks/useCustomerDetail";
 import SendMessageModal from "./SendMessageModal";
 
-export default function CustomerDetailModal({ customer, onClose }) {
+export default function CustomerDetailModal({ customer, onClose, onSent }) {
   const { addresses, orders, favorites, loading } = useCustomerDetail(customer.email, customer.customerId);
   const [sendOpen, setSendOpen] = useState(false);
 
@@ -130,6 +130,7 @@ export default function CustomerDetailModal({ customer, onClose }) {
           mode="single"
           customer={{ ...customer, favoriteNames: favorites.map((f) => f.name) }}
           onClose={() => setSendOpen(false)}
+          onSent={onSent}
         />
       )}
     </div>

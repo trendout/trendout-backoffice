@@ -246,7 +246,7 @@ export default function CustomersPage() {
         </div>
       </div>
 
-      {selectedCustomer && <CustomerDetailModal customer={selectedCustomer} onClose={() => setSelectedCustomer(null)} />}
+      {selectedCustomer && <CustomerDetailModal customer={selectedCustomer} onClose={() => setSelectedCustomer(null)} onSent={reload} />}
       {importOpen && <ImportNewsletterModal onClose={() => setImportOpen(false)} onDone={reload} />}
       {campaignOpen && (
         <SendMessageModal
