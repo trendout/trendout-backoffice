@@ -1,10 +1,12 @@
 // supabase/functions/send-campaign/index.ts
 //
-// Envia uma mensagem pontual (desconto, aviso sobre favoritos, campanha) —
-// ou a um único cliente, ou a todos os subscritores ativos da newsletter.
-// Chamado a partir do backoffice (modal do cliente, ou da página de Clientes).
+// Envia uma mensagem pontual — a um único cliente, a uma lista escolhida
+// no backoffice, ou a todos os subscritores ativos da newsletter.
+// Depois de enviar, marca "last_contacted_at" em quem for subscritor,
+// para o backoffice saber quem já recebeu e quem ainda falta.
 //
-// body: { mode: "single", toEmail, toName, subject, message }
+// body: { mode: "single", toEmail, subject, message }
+//    ou { mode: "selected", emails: string[], subject, message }
 //    ou { mode: "broadcast", subject, message }
 
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -18,7 +20,6 @@ const FROM_ADDRESS = "Trendout <noreply@trendout.pt>";
 const LOGO_URL = `${Deno.env.get("SUPABASE_URL")}/storage/v1/object/public/product-images/trendout-logo.png`;
 
 function emailHtml(storeName: string, message: string, unsubscribeUrl: string | null) {
-  // troca quebras de linha por <br> — quem escreve no backoffice não escreve HTML
   const bodyHtml = message.replace(/\n/g, "<br>");
 
   return `
@@ -71,7 +72,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const { mode, toEmail, subject, message } = await req.json();
+    const { mode, toEmail, emails: selectedEmails, subject, message } = await req.json();
     if (!subject || !message) throw new Error("Falta o assunto ou a mensagem.");
 
     const supabase = createClient(
@@ -85,30 +86,57 @@ Deno.serve(async (req) => {
 
     if (mode === "single") {
       if (!toEmail) throw new Error("Falta o email do cliente.");
-      const html = emailHtml(storeName, message, null); // mensagem individual não precisa de link de cancelar (não é uma campanha em massa)
+      const html = emailHtml(storeName, message, null);
       const ok = await sendOne(resendKey, toEmail, subject, html);
       if (!ok) throw new Error("O Resend recusou o envio.");
+
+      await supabase.from("newsletter_subscribers").update({ last_contacted_at: new Date().toISOString() }).eq("email", toEmail);
+
       return new Response(JSON.stringify({ sent: 1 }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 });
     }
 
-    if (mode === "broadcast") {
-      const { data: subs, error } = await supabase
-        .from("newsletter_subscribers")
-        .select("email, unsubscribe_token")
-        .eq("active", true);
-      if (error) throw error;
+    if (mode === "selected" || mode === "broadcast") {
+      let subs;
+      if (mode === "selected") {
+        if (!Array.isArray(selectedEmails) || selectedEmails.length === 0) throw new Error("Nenhum contacto selecionado.");
+        const { data, error } = await supabase
+          .from("newsletter_subscribers")
+          .select("email, unsubscribe_token")
+          .in("email", selectedEmails)
+          .eq("active", true);
+        if (error) throw error;
+        subs = data;
+      } else {
+        const { data, error } = await supabase
+          .from("newsletter_subscribers")
+          .select("email, unsubscribe_token")
+          .eq("active", true);
+        if (error) throw error;
+        subs = data;
+      }
 
       let sent = 0;
-      const BATCH_SIZE = 90; // margem por baixo do limite de 100 do Resend
+      const sentEmails: string[] = [];
+      const BATCH_SIZE = 90; // margem por baixo do limite de 100 do Resend por pedido
       for (let i = 0; i < (subs || []).length; i += BATCH_SIZE) {
         const batch = (subs || []).slice(i, i + BATCH_SIZE);
-        const emails = batch.map((s) => ({
+        const emailPayloads = batch.map((s) => ({
           to: s.email,
           subject,
           html: emailHtml(storeName, message, `${Deno.env.get("SUPABASE_URL")}/functions/v1/unsubscribe?token=${s.unsubscribe_token}`),
         }));
-        const ok = await sendBatch(resendKey, emails);
-        if (ok) sent += batch.length;
+        const ok = await sendBatch(resendKey, emailPayloads);
+        if (ok) {
+          sent += batch.length;
+          sentEmails.push(...batch.map((s) => s.email));
+        }
+      }
+
+      if (sentEmails.length > 0) {
+        await supabase
+          .from("newsletter_subscribers")
+          .update({ last_contacted_at: new Date().toISOString() })
+          .in("email", sentEmails);
       }
 
       return new Response(JSON.stringify({ sent, total: (subs || []).length }), {
@@ -117,7 +145,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    throw new Error("Modo inválido — usa 'single' ou 'broadcast'.");
+    throw new Error("Modo inválido — usa 'single', 'selected' ou 'broadcast'.");
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

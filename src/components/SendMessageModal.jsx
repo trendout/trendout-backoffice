@@ -5,9 +5,10 @@ import { supabase } from "../lib/supabase";
 
 /**
  * mode: "single" (para um cliente, com o email/favoritos já conhecidos)
+ *    ou "selected" (para uma lista de contactos escolhidos na página de Clientes)
  *    ou "broadcast" (para todos os subscritores ativos da newsletter)
  */
-export default function SendMessageModal({ mode, customer, subscriberCount, onClose }) {
+export default function SendMessageModal({ mode, customer, subscriberCount, selectedEmails, onClose, onSent }) {
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
@@ -19,14 +20,16 @@ export default function SendMessageModal({ mode, customer, subscriberCount, onCl
     setSending(true);
     setError("");
     try {
-      const { data, error: err } = await supabase.functions.invoke("send-campaign", {
-        body: mode === "single"
-          ? { mode: "single", toEmail: customer.email, subject, message }
-          : { mode: "broadcast", subject, message },
-      });
+      const body =
+        mode === "single" ? { mode: "single", toEmail: customer.email, subject, message }
+        : mode === "selected" ? { mode: "selected", emails: selectedEmails, subject, message }
+        : { mode: "broadcast", subject, message };
+
+      const { data, error: err } = await supabase.functions.invoke("send-campaign", { body });
       if (err) throw err;
       if (data?.error) throw new Error(data.error);
       setResult(data);
+      onSent?.();
     } catch (err) {
       setError(err.message || "Erro ao enviar.");
     } finally {
@@ -34,20 +37,23 @@ export default function SendMessageModal({ mode, customer, subscriberCount, onCl
     }
   };
 
+  const title =
+    mode === "single" ? `Enviar a ${customer.name || customer.email}`
+    : mode === "selected" ? `Enviar aos ${subscriberCount} selecionados`
+    : "Enviar campanha";
+
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 300 }}>
       <div style={{ width: "100%", maxWidth: 480, background: T.bgRaised, border: `1px solid ${T.border}`, borderRadius: 14, padding: 26 }}>
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
-          <h2 style={{ margin: 0, fontFamily: "'Bebas Neue', sans-serif", fontSize: 20 }}>
-            {mode === "single" ? `Enviar a ${customer.name || customer.email}` : "Enviar campanha"}
-          </h2>
+          <h2 style={{ margin: 0, fontFamily: "'Bebas Neue', sans-serif", fontSize: 20 }}>{title}</h2>
           <button onClick={onClose} style={{ background: "none", border: "none", color: T.muted, cursor: "pointer" }}><X size={20} /></button>
         </div>
 
         {result ? (
           <div>
             <p style={{ fontSize: 14, color: T.accent, marginBottom: 20 }}>
-              {mode === "single" ? "Email enviado ✓" : `Campanha enviada a ${result.sent} de ${result.total} subscritores ✓`}
+              {mode === "single" ? "Email enviado ✓" : `Enviado a ${result.sent} de ${result.total} contactos ✓`}
             </p>
             <Button onClick={onClose} style={{ width: "100%" }}>Fechar</Button>
           </div>
@@ -55,7 +61,14 @@ export default function SendMessageModal({ mode, customer, subscriberCount, onCl
           <>
             {mode === "broadcast" && (
               <div style={{ background: "rgba(255,180,77,0.08)", border: `1px solid ${T.warn}55`, borderRadius: 8, padding: 12, fontSize: 12.5, color: T.warn, marginBottom: 16, lineHeight: 1.5 }}>
-                ⚠ Vai ser enviado a todos os <strong>{subscriberCount}</strong> subscritores ativos da newsletter. O link de cancelar subscrição é adicionado automaticamente.
+                ⚠ Vai ser enviado a todos os <strong>{subscriberCount}</strong> subscritores ativos da newsletter — se o número for grande, confirma que não excedes o limite diário do teu plano no Resend.
+                O link de cancelar subscrição é adicionado automaticamente.
+              </div>
+            )}
+
+            {mode === "selected" && (
+              <div style={{ background: "rgba(201,255,63,0.06)", border: `1px solid ${T.accent}55`, borderRadius: 8, padding: 12, fontSize: 12.5, color: T.muted, marginBottom: 16, lineHeight: 1.5 }}>
+                Vai ser enviado só aos <strong style={{ color: T.accent }}>{subscriberCount}</strong> contactos que selecionaste. O link de cancelar subscrição é adicionado automaticamente.
               </div>
             )}
 
