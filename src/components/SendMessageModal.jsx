@@ -60,6 +60,11 @@ export default function SendMessageModal({ mode, customer, subscriberCount, sele
                 ⚠ O envio funcionou, mas não foi possível marcar como "contactado": {result.updateError}
               </p>
             )}
+            {result.debugSentEmails && (
+              <p style={{ fontSize: 11, color: T.muted, marginBottom: 20, wordBreak: "break-all" }}>
+                [diagnóstico] {result.debugSentEmails.length} emails processados: {result.debugSentEmails.slice(0, 5).join(", ")}{result.debugSentEmails.length > 5 ? "..." : ""}
+              </p>
+            )}
             <Button onClick={onClose} style={{ width: "100%" }}>Fechar</Button>
           </div>
         ) : (

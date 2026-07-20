@@ -144,7 +144,7 @@ Deno.serve(async (req) => {
         }
       }
 
-      return new Response(JSON.stringify({ sent, total: (subs || []).length, updateError: updateErrorMsg }), {
+      return new Response(JSON.stringify({ sent, total: (subs || []).length, updateError: updateErrorMsg, debugSentEmails: sentEmails }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
