@@ -73,7 +73,7 @@ export function generateOrderPdf(order, storeName = "Trendout") {
   doc.setFontSize(9);
   doc.setTextColor(120);
   doc.text(
-    order.paymentMethod === "card" ? `Pago com cartão •••• ${order.cardLast4 || "----"}` : "Pago por transferência bancária",
+    order.paymentMethod === "card" ? `Pago com cartão •••• ${order.cardLast4 || "----"}` : order.paymentMethod === "mbway" ? "Pago por MB WAY" : "Pago por transferência bancária",
     marginX,
     y
   );

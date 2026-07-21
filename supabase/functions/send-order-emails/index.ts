@@ -20,7 +20,7 @@ function formatMoney(n: number) {
   return `€${Number(n).toFixed(2)}`;
 }
 
-function customerEmailHtml(order: any, storeName: string, contactPhone: string, contactEmail: string) {
+function customerEmailHtml(order: any, storeName: string, contactPhone: string, contactEmail: string, mbwayPhone: string) {
   const itemsHtml = order.order_items
     .map((it: any) => `
       <tr>
@@ -34,6 +34,14 @@ function customerEmailHtml(order: any, storeName: string, contactPhone: string, 
 
   const paymentNote = order.payment_method === "card"
     ? `<p style="color: #555;">O teu pagamento por cartão foi confirmado.</p>`
+    : order.payment_method === "mbway"
+    ? `
+      <div style="background:#f7f7f7; border-radius:8px; padding:16px 18px; margin:14px 0;">
+        <p style="margin:0 0 10px; color:#1a1a1a;">Para pagares por MB WAY, envia o valor total da encomenda para o nosso número
+        <strong>${mbwayPhone || "(a confirmar)"}</strong>, e no descritivo coloca o número da tua encomenda <strong>${order.order_number}</strong>.</p>
+        <p style="margin:0; color:#555;">A encomenda avança para produção assim que confirmarmos o pagamento.</p>
+      </div>
+    `
     : `
       <div style="background:#f7f7f7; border-radius:8px; padding:16px 18px; margin:14px 0;">
         <p style="margin:0 0 10px; color:#1a1a1a;">Transfere o valor total para o IBAN <strong>PT50 0023 0000 45568989219 94</strong>,
@@ -88,7 +96,7 @@ function adminEmailHtml(order: any, storeName: string) {
       </table>
       <h1 style="font-size: 20px;">Nova encomenda: ${order.order_number}</h1>
       <p><strong>Cliente:</strong> ${order.customer_name} (${order.customer_email})</p>
-      <p><strong>Método de pagamento:</strong> ${order.payment_method === "card" ? "Cartão" : "Transferência bancária"}</p>
+      <p><strong>Método de pagamento:</strong> ${order.payment_method === "card" ? "Cartão" : order.payment_method === "mbway" ? "MB WAY" : "Transferência bancária"}</p>
       <p><strong>Total:</strong> ${formatMoney(order.total)}</p>
       <p><strong>Artigos:</strong></p>
       <ul>${itemsHtml}</ul>
@@ -137,7 +145,7 @@ Deno.serve(async (req) => {
             from: FROM_ADDRESS,
             to: order.customer_email,
             subject: `Confirmação da encomenda ${order.order_number}`,
-            html: customerEmailHtml(order, storeName, settings?.company_phone, settings?.company_email),
+            html: customerEmailHtml(order, storeName, settings?.company_phone, settings?.company_email, settings?.mbway_phone),
           }),
         })
       );

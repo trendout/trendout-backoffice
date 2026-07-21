@@ -79,7 +79,7 @@ export default function OrdersPage() {
                 <td style={{ padding: "12px 16px" }}>{o.customerName}</td>
                 <td style={{ padding: "12px 16px", color: T.muted }}>{o.createdAt ? new Date(o.createdAt).toLocaleDateString("pt-PT") : "—"}</td>
                 <td style={{ padding: "12px 16px" }}>€{Number(o.total).toFixed(2)}</td>
-                <td style={{ padding: "12px 16px", color: T.muted }}>{o.paymentMethod === "card" ? "Cartão" : "Transferência"}</td>
+                <td style={{ padding: "12px 16px", color: T.muted }}>{o.paymentMethod === "card" ? "Cartão" : o.paymentMethod === "mbway" ? "MB WAY" : "Transferência"}</td>
                 <td style={{ padding: "12px 16px" }}><Badge status={o.status} /></td>
               </tr>
             ))}

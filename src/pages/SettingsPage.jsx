@@ -49,6 +49,7 @@ export default function SettingsPage() {
         enableMultibanco: form.enableMultibanco,
         multibancoEntity: form.multibancoEntity,
         enableMbway: form.enableMbway,
+        mbwayPhone: form.mbwayPhone,
         googleMerchantId: form.googleMerchantId,
         googleSiteVerification: form.googleSiteVerification,
         enableGoogleAds: form.enableGoogleAds,
@@ -315,10 +316,15 @@ export default function SettingsPage() {
         </div>
 
         <div>
-          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: T.text, cursor: "pointer" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: T.text, cursor: "pointer", marginBottom: form.enableMbway ? 10 : 0 }}>
             <input type="checkbox" checked={!!form.enableMbway} onChange={(e) => update("enableMbway", e.target.checked)} style={{ accentColor: T.accent }} />
             MB WAY
           </label>
+          {form.enableMbway && (
+            <Field label="Número de telemóvel (mostrado ao cliente para pagar)">
+              <input style={inputStyle} value={form.mbwayPhone || ""} onChange={(e) => update("mbwayPhone", e.target.value)} placeholder="+351 912 345 678" />
+            </Field>
+          )}
         </div>
       </div>
 

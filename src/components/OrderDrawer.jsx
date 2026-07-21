@@ -113,7 +113,7 @@ export default function OrderDrawer({ order, onClose, onUpdateStatus, onMarkAsPa
         <div style={{ marginTop: 18 }}>
           <div style={{ fontSize: 11.5, color: T.muted, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 8 }}>Pagamento</div>
           <div style={{ fontSize: 13, color: "#cfd3cd" }}>
-            {order.paymentMethod === "card" ? `Cartão terminado em •••• ${order.cardLast4 || "----"}` : "Transferência bancária"}
+            {order.paymentMethod === "card" ? `Cartão terminado em •••• ${order.cardLast4 || "----"}` : order.paymentMethod === "mbway" ? "MB WAY" : "Transferência bancária"}
             {order.couponCode && <div style={{ marginTop: 4, color: T.accent, fontSize: 12.5 }}>Cupão aplicado: {order.couponCode} (−€{Number(order.discountAmount || 0).toFixed(2)})</div>}
           </div>
           <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8 }}>
