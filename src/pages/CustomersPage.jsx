@@ -153,7 +153,7 @@ export default function CustomersPage() {
                     : <Square size={16} />}
                 </button>
               </th>
-              {["Cliente", "Email", "Conta", "Origem", "Encomendas", "Total gasto", "Pontos", "Newsletter", "Contacto", "Última atividade"].map((h) => (
+              {["Cliente", "Email", "Telefone", "Conta", "Origem", "Encomendas", "Total gasto", "Pontos", "Newsletter", "Contacto", "Última atividade"].map((h) => (
                 <th key={h} style={{ padding: "12px 16px", color: T.muted, fontWeight: 600, fontSize: 11.5, textTransform: "uppercase", letterSpacing: 0.4 }}>{h}</th>
               ))}
             </tr>
@@ -174,6 +174,7 @@ export default function CustomersPage() {
                   </button>
                 </td>
                 <td style={{ padding: "12px 16px", color: T.muted }}>{c.email}</td>
+                <td style={{ padding: "12px 16px", color: T.muted }}>{c.phone || "—"}</td>
                 <td style={{ padding: "12px 16px" }}>
                   {c.hasAccount ? (
                     <span style={{ fontSize: 11.5, color: c.emailConfirmed ? T.accent : T.warn, border: `1px solid ${c.emailConfirmed ? T.accent : T.warn}55`, borderRadius: 999, padding: "3px 9px" }}>
@@ -221,7 +222,7 @@ export default function CustomersPage() {
               </tr>
             ))}
             {pageItems.length === 0 && (
-              <tr><td colSpan={11} style={{ padding: 28, textAlign: "center", color: T.muted }}>Sem clientes encontrados.</td></tr>
+              <tr><td colSpan={12} style={{ padding: 28, textAlign: "center", color: T.muted }}>Sem clientes encontrados.</td></tr>
             )}
           </tbody>
         </table>

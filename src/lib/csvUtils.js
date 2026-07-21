@@ -1,11 +1,13 @@
 // Exporta e importa listas em CSV — sem bibliotecas externas, só o essencial.
 
 export function exportCustomersCsv(customers) {
-  const headers = ["Nome", "Email", "Conta", "Encomendas", "Total gasto (€)", "Pontos", "Newsletter", "Última atividade"];
+  const headers = ["Nome", "Email", "Telefone", "Conta", "Origem", "Encomendas", "Total gasto (€)", "Pontos", "Newsletter", "Última atividade"];
   const rows = customers.map((c) => [
     c.name || "",
     c.email,
+    c.phone || "",
     c.hasAccount ? (c.emailConfirmed ? "Confirmada" : "Por confirmar") : "Convidado",
+    c.source === "popup" ? "Pop-up" : c.source === "importacao_csv" ? "Importado" : c.isNewsletterSubscriber ? "Newsletter" : "",
     c.orderCount,
     c.totalSpent.toFixed(2),
     c.pointsBalance || 0,
