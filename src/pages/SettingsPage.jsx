@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Save, Globe, Building2, Code2, CreditCard, Zap, AlertTriangle, Search, Wrench, Megaphone, Gift } from "lucide-react";
+import { Save, Globe, Building2, Code2, CreditCard, Zap, AlertTriangle, Search, Wrench, Megaphone, Gift, Tag } from "lucide-react";
 import { T, inputStyle, Field, Button } from "../lib/theme";
 import { useStoreSettings } from "../hooks/useStoreSettings";
 
@@ -39,6 +39,9 @@ export default function SettingsPage() {
         maintenanceMessage: form.maintenanceMessage,
         announcementEnabled: form.announcementEnabled,
         announcementMessage: form.announcementMessage,
+        promoPopupEnabled: form.promoPopupEnabled,
+        promoPopupMessage: form.promoPopupMessage,
+        promoPopupCouponCode: form.promoPopupCouponCode,
         loyaltyPointsEnabled: form.loyaltyPointsEnabled,
         pointsPerEuroSpent: form.pointsPerEuroSpent,
         pointsPerEuroDiscount: form.pointsPerEuroDiscount,
@@ -105,6 +108,37 @@ export default function SettingsPage() {
             </Field>
           )}
         </div>
+      </div>
+
+      <div style={{ background: T.bgRaised, border: `1px solid ${T.border}`, borderRadius: 12, padding: 24, marginBottom: 18 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 18, color: T.muted, fontSize: 12, textTransform: "uppercase", letterSpacing: 0.4 }}>
+          <Tag size={14} /> Pop-up promocional
+        </div>
+
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: T.text, cursor: "pointer", marginBottom: 10 }}>
+          <input type="checkbox" checked={!!form.promoPopupEnabled} onChange={(e) => update("promoPopupEnabled", e.target.checked)} style={{ accentColor: T.accent }} />
+          Ativar pop-up promocional
+        </label>
+        <p style={{ fontSize: 11.5, color: T.muted, margin: "0 0 14px", lineHeight: 1.5 }}>
+          Aparece uma vez por visita, a pedir email (e telefone, opcional) em troca de um cupão de desconto.
+          Cria o cupão em <strong>Cupões</strong> primeiro, e cola aqui o código para o mostrar depois de alguém se inscrever.
+        </p>
+
+        {form.promoPopupEnabled && (
+          <>
+            <Field label="Mensagem promocional">
+              <textarea
+                style={{ ...inputStyle, minHeight: 70, resize: "vertical" }}
+                value={form.promoPopupMessage || ""}
+                onChange={(e) => update("promoPopupMessage", e.target.value)}
+                placeholder="Inscreve-te e recebe 10% de desconto na tua primeira compra!"
+              />
+            </Field>
+            <Field label="Código do cupão a mostrar">
+              <input style={inputStyle} value={form.promoPopupCouponCode || ""} onChange={(e) => update("promoPopupCouponCode", e.target.value.toUpperCase())} placeholder="BEMVINDO10" />
+            </Field>
+          </>
+        )}
       </div>
 
       <div style={{ background: T.bgRaised, border: `1px solid ${T.border}`, borderRadius: 12, padding: 24, marginBottom: 18 }}>

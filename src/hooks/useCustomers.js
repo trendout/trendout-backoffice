@@ -10,7 +10,7 @@ export function useCustomers() {
 
     const [{ data: orders, error: ordersErr }, { data: subs, error: subsErr }] = await Promise.all([
       supabase.from("orders").select("customer_id, customer_email, customer_name, total, created_at"),
-      supabase.from("newsletter_subscribers").select("email, subscribed_at, active, last_contacted_at"),
+      supabase.from("newsletter_subscribers").select("email, subscribed_at, active, last_contacted_at, source, phone"),
     ]);
 
     if (ordersErr || subsErr) {
@@ -60,10 +60,14 @@ export function useCustomers() {
           hasAccount: false,
           emailConfirmed: false,
           lastContactedAt: s.last_contacted_at,
+          source: s.source,
+          phone: s.phone || "",
         };
       } else {
         map[key].isNewsletterSubscriber = s.active !== false;
         map[key].lastContactedAt = s.last_contacted_at;
+        map[key].source = s.source;
+        map[key].phone = s.phone || map[key].phone || "";
       }
     });
 

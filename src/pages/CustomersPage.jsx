@@ -153,7 +153,7 @@ export default function CustomersPage() {
                     : <Square size={16} />}
                 </button>
               </th>
-              {["Cliente", "Email", "Conta", "Encomendas", "Total gasto", "Pontos", "Newsletter", "Contacto", "Última atividade"].map((h) => (
+              {["Cliente", "Email", "Conta", "Origem", "Encomendas", "Total gasto", "Pontos", "Newsletter", "Contacto", "Última atividade"].map((h) => (
                 <th key={h} style={{ padding: "12px 16px", color: T.muted, fontWeight: 600, fontSize: 11.5, textTransform: "uppercase", letterSpacing: 0.4 }}>{h}</th>
               ))}
             </tr>
@@ -183,6 +183,17 @@ export default function CustomersPage() {
                     <span style={{ color: T.muted, fontSize: 12 }}>Convidado</span>
                   )}
                 </td>
+                <td style={{ padding: "12px 16px" }}>
+                  {c.source === "popup" ? (
+                    <span style={{ fontSize: 11.5, color: T.accent }}>Pop-up</span>
+                  ) : c.source === "importacao_csv" ? (
+                    <span style={{ fontSize: 11.5, color: T.muted }}>Importado</span>
+                  ) : c.isNewsletterSubscriber ? (
+                    <span style={{ fontSize: 11.5, color: T.muted }}>Newsletter</span>
+                  ) : (
+                    <span style={{ color: T.muted, fontSize: 12 }}>—</span>
+                  )}
+                </td>
                 <td style={{ padding: "12px 16px" }}>{c.orderCount}</td>
                 <td style={{ padding: "12px 16px", color: c.totalSpent > 0 ? T.accent : T.muted, fontWeight: c.totalSpent > 0 ? 600 : 400 }}>€{c.totalSpent.toFixed(2)}</td>
                 <td style={{ padding: "12px 16px", color: (c.pointsBalance || 0) > 0 ? T.accent : T.muted }}>{c.pointsBalance || 0}</td>
@@ -210,7 +221,7 @@ export default function CustomersPage() {
               </tr>
             ))}
             {pageItems.length === 0 && (
-              <tr><td colSpan={10} style={{ padding: 28, textAlign: "center", color: T.muted }}>Sem clientes encontrados.</td></tr>
+              <tr><td colSpan={11} style={{ padding: 28, textAlign: "center", color: T.muted }}>Sem clientes encontrados.</td></tr>
             )}
           </tbody>
         </table>

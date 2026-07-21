@@ -50,6 +50,9 @@ export function useStoreSettings() {
       loyaltyPointsEnabled: data.loyalty_points_enabled,
       pointsPerEuroSpent: data.points_per_euro_spent ?? 2,
       pointsPerEuroDiscount: data.points_per_euro_discount ?? 100,
+      promoPopupEnabled: data.promo_popup_enabled,
+      promoPopupMessage: data.promo_popup_message || "",
+      promoPopupCouponCode: data.promo_popup_coupon_code || "",
       theme: data.theme || DEFAULT_THEME,
     });
     setLoading(false);
@@ -91,6 +94,9 @@ export function useStoreSettings() {
       loyaltyPointsEnabled: "loyalty_points_enabled",
       pointsPerEuroSpent: "points_per_euro_spent",
       pointsPerEuroDiscount: "points_per_euro_discount",
+      promoPopupEnabled: "promo_popup_enabled",
+      promoPopupMessage: "promo_popup_message",
+      promoPopupCouponCode: "promo_popup_coupon_code",
       theme: "theme",
     };
     const dbPatch = {};
