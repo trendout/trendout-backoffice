@@ -33,8 +33,15 @@ function customerEmailHtml(order: any, storeName: string, contactPhone: string, 
     .join("");
 
   const paymentNote = order.payment_method === "card"
-    ? "O teu pagamento por cartão foi confirmado."
-    : "Assim que recebermos a tua transferência bancária, a encomenda avança para produção.";
+    ? `<p style="color: #555;">O teu pagamento por cartão foi confirmado.</p>`
+    : `
+      <div style="background:#f7f7f7; border-radius:8px; padding:16px 18px; margin:14px 0;">
+        <p style="margin:0 0 10px; color:#1a1a1a;">Transfere o valor total para o IBAN <strong>PT50 0023 0000 45568989219 94</strong>,
+        usando o número da encomenda <strong>${order.order_number}</strong> como referência, e envia o comprovativo para o email:
+        <a href="mailto:hitrendout@gmail.com" style="color:#1a1a1a;">hitrendout@gmail.com</a>.</p>
+        <p style="margin:0; color:#555;">A encomenda avança para produção assim que confirmarmos o pagamento.</p>
+      </div>
+    `;
 
   return `
     <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #1a1a1a;">
@@ -47,7 +54,7 @@ function customerEmailHtml(order: any, storeName: string, contactPhone: string, 
       </table>
       <h1 style="font-size: 20px;">Obrigado pela tua compra, ${order.customer_name}!</h1>
       <p>A tua encomenda <strong>${order.order_number}</strong> foi recebida com sucesso.</p>
-      <p style="color: #555;">${paymentNote}</p>
+      ${paymentNote}
       <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
         ${itemsHtml}
         <tr style="border-top: 1px solid #ddd;">
