@@ -1,6 +1,6 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Plus, Pencil, Trash2, Search, AlertTriangle, Minus, X, Percent } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, AlertTriangle, Minus, X, Percent, ChevronLeft, ChevronRight } from "lucide-react";
 import { T, inputStyle, Button } from "../lib/theme";
 import { useProducts } from "../hooks/useSupabaseData";
 import { useCategories } from "../hooks/useCategories";
@@ -19,8 +19,14 @@ export default function ProductsPage() {
   const [stockPopoverId, setStockPopoverId] = useState(null);
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
   const [stockPopoverPos, setStockPopoverPos] = useState({ top: 0, left: 0 });
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
 
   const filtered = products.filter((p) => p.name.toLowerCase().includes(query.toLowerCase()));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const pageItems = filtered.slice((page - 1) * pageSize, page * pageSize);
+
+  useEffect(() => { setPage(1); }, [query, pageSize]);
   const totalStock = (p) => p.variants.reduce((s, v) => s + v.stock, 0);
   const quickInputStyle = { ...inputStyle, padding: "6px 8px", fontSize: 12.5 };
 
@@ -66,7 +72,7 @@ export default function ProductsPage() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((p) => {
+            {pageItems.map((p) => {
               const stock = totalStock(p);
               return (
                 <tr key={p.id} style={{ borderTop: `1px solid ${T.border}` }}>
@@ -176,11 +182,41 @@ export default function ProductsPage() {
                 </tr>
               );
             })}
-            {filtered.length === 0 && (
+            {pageItems.length === 0 && (
               <tr><td colSpan={10} style={{ padding: 28, textAlign: "center", color: T.muted }}>Sem produtos encontrados.</td></tr>
             )}
           </tbody>
         </table>
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 16, flexWrap: "wrap", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: T.muted }}>
+          Por página:
+          {[25, 50, 100].map((n) => (
+            <button
+              key={n}
+              onClick={() => setPageSize(n)}
+              style={{
+                background: pageSize === n ? "rgba(201,255,63,0.1)" : "none",
+                border: `1px solid ${pageSize === n ? T.accent : T.border}`,
+                color: pageSize === n ? T.accent : T.text,
+                borderRadius: 6, padding: "4px 10px", cursor: "pointer", fontSize: 12,
+              }}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13 }}>
+          <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} style={{ background: "none", border: "none", color: page === 1 ? "#3a3f3a" : T.text, cursor: page === 1 ? "default" : "pointer", display: "flex" }}>
+            <ChevronLeft size={18} />
+          </button>
+          <span style={{ color: T.muted }}>Página {page} de {totalPages}</span>
+          <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} style={{ background: "none", border: "none", color: page === totalPages ? "#3a3f3a" : T.text, cursor: page === totalPages ? "default" : "pointer", display: "flex" }}>
+            <ChevronRight size={18} />
+          </button>
+        </div>
       </div>
 
       {bulkModalOpen && (
