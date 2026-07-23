@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { X, CheckCircle2, Truck, Save, Send, Printer } from "lucide-react";
+import { X, CheckCircle2, Truck, Save, Send, Printer, MapPin, AlertTriangle } from "lucide-react";
 import { T, inputStyle, Button } from "../lib/theme";
 import { Badge, STATUS_META } from "../lib/orderStatus";
 import { supabase } from "../lib/supabase";
@@ -78,6 +78,35 @@ export default function OrderDrawer({ order, onClose, onUpdateStatus, onMarkAsPa
             Entrega estimada: {order.estimatedDelivery ? new Date(order.estimatedDelivery).toLocaleDateString("pt-PT") : "a calcular"}
           </div>
         </div>
+
+        {order.orderIpCity && (() => {
+          const mismatch = order.orderIpCountryCode && order.shippingCountry && order.orderIpCountryCode !== order.shippingCountry;
+          return (
+            <div style={{ marginTop: 18 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: T.muted, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 8 }}>
+                <MapPin size={12} /> Localização de quem fez a encomenda
+              </div>
+              <div style={{ fontSize: 13, color: "#cfd3cd", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <span>{order.orderIpCity}, {order.orderIpCountry}</span>
+                {order.orderIpLat && order.orderIpLng && (
+                  <a
+                    href={`https://www.google.com/maps?q=${order.orderIpLat},${order.orderIpLng}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: T.accent, fontSize: 12, textDecoration: "none" }}
+                  >
+                    Ver no mapa →
+                  </a>
+                )}
+              </div>
+              {mismatch && (
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8, color: T.warn, fontSize: 12, background: "rgba(255,180,77,0.08)", border: `1px solid ${T.warn}55`, borderRadius: 6, padding: "6px 10px" }}>
+                  <AlertTriangle size={13} /> Esta localização não corresponde ao país da morada de entrega — vale a pena confirmar antes de enviar.
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         <div style={{ marginTop: 18 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: T.muted, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 8 }}>
