@@ -55,6 +55,7 @@ export default function SettingsPage() {
         enableGoogleAds: form.enableGoogleAds,
         googleAdsConversionId: form.googleAdsConversionId,
         googleAdsConversionLabel: form.googleAdsConversionLabel,
+        metaPixelId: form.metaPixelId,
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
@@ -365,6 +366,18 @@ export default function SettingsPage() {
             </div>
           )}
         </div>
+      </div>
+
+      <div style={{ background: T.bgRaised, border: `1px solid ${T.border}`, borderRadius: 12, padding: 24, marginBottom: 18 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 18, color: T.muted, fontSize: 12, textTransform: "uppercase", letterSpacing: 0.4 }}>
+          <Zap size={14} /> Meta Pixel (Facebook / Instagram Ads)
+        </div>
+        <Field label="ID do Pixel">
+          <input style={inputStyle} value={form.metaPixelId || ""} onChange={(e) => update("metaPixelId", e.target.value)} placeholder="1234567890123456" />
+        </Field>
+        <p style={{ fontSize: 11.5, color: T.muted, margin: "8px 0 0", lineHeight: 1.5 }}>
+          Encontra-o no Meta Business Suite → Gestor de Eventos → o teu pixel. Regista visitas e compras automaticamente para campanhas no Facebook/Instagram.
+        </p>
       </div>
 
       <div style={{ background: T.bgRaised, border: `1px solid ${T.border}`, borderRadius: 12, padding: 24, marginBottom: 18 }}>
