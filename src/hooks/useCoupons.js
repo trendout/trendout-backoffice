@@ -26,6 +26,9 @@ export function useCoupons() {
         value: Number(c.value),
         label: c.label,
         active: c.active,
+        ownerCustomerId: c.owner_customer_id,
+        ownerEmail: c.owner_email || "",
+        commissionRate: c.commission_rate != null ? Number(c.commission_rate) : 5,
       }))
     );
     setLoading(false);
@@ -55,5 +58,24 @@ export function useCoupons() {
     await load();
   };
 
-  return { coupons, loading, addCoupon, toggleCoupon, deleteCoupon, reload: load };
+  // procura a conta do cliente pelo email, e liga-a ao cupão como "dono" (influenciador)
+  const assignInfluencer = async (couponId, email, commissionRate) => {
+    if (!email.trim()) {
+      const { error } = await supabase.from("coupons").update({ owner_customer_id: null, owner_email: null, commission_rate: commissionRate }).eq("id", couponId);
+      if (error) throw error;
+      await load();
+      return;
+    }
+
+    const { data, error: fnErr } = await supabase.functions.invoke("find-customer-by-email", { body: { email: email.trim().toLowerCase() } });
+    if (fnErr) throw fnErr;
+    if (data?.error) throw new Error(data.error);
+    if (!data?.userId) throw new Error("Não encontrei nenhuma conta com esse email.");
+
+    const { error } = await supabase.from("coupons").update({ owner_customer_id: data.userId, owner_email: email.trim().toLowerCase(), commission_rate: commissionRate }).eq("id", couponId);
+    if (error) throw error;
+    await load();
+  };
+
+  return { coupons, loading, addCoupon, toggleCoupon, deleteCoupon, assignInfluencer, reload: load };
 }
