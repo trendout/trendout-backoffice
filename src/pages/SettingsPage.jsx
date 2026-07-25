@@ -56,6 +56,7 @@ export default function SettingsPage() {
         googleAdsConversionId: form.googleAdsConversionId,
         googleAdsConversionLabel: form.googleAdsConversionLabel,
         metaPixelId: form.metaPixelId,
+        ga4MeasurementId: form.ga4MeasurementId,
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
@@ -377,6 +378,18 @@ export default function SettingsPage() {
         </Field>
         <p style={{ fontSize: 11.5, color: T.muted, margin: "8px 0 0", lineHeight: 1.5 }}>
           Encontra-o no Meta Business Suite → Gestor de Eventos → o teu pixel. Regista visitas e compras automaticamente para campanhas no Facebook/Instagram.
+        </p>
+      </div>
+
+      <div style={{ background: T.bgRaised, border: `1px solid ${T.border}`, borderRadius: 12, padding: 24, marginBottom: 18 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 18, color: T.muted, fontSize: 12, textTransform: "uppercase", letterSpacing: 0.4 }}>
+          <Zap size={14} /> Google Analytics (GA4)
+        </div>
+        <Field label="ID de medição">
+          <input style={inputStyle} value={form.ga4MeasurementId || ""} onChange={(e) => update("ga4MeasurementId", e.target.value)} placeholder="G-XXXXXXXXXX" />
+        </Field>
+        <p style={{ fontSize: 11.5, color: T.muted, margin: "8px 0 0", lineHeight: 1.5 }}>
+          Encontra-o em Google Analytics → Admin → Fluxos de dados → o fluxo da loja. Só ativa depois de o cliente aceitar cookies de "Análises".
         </p>
       </div>
 
