@@ -31,6 +31,11 @@ export default function CategoryModal({ category, isTop, topCategories, onClose,
             </select>
           </Field>
         )}
+        {!isTop && (
+          <Field label="Link do guia de tamanhos (opcional)">
+            <input style={inputStyle} value={form.sizeGuideUrl || ""} onChange={(e) => setForm((f) => ({ ...f, sizeGuideUrl: e.target.value }))} placeholder="/pagina/guia-tamanhos-tshirts" />
+          </Field>
+        )}
         <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 8 }}>
           <Button variant="ghost" onClick={onClose}>Cancelar</Button>
           <Button onClick={submit}>Guardar</Button>

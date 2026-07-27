@@ -26,6 +26,7 @@ export function useCategories() {
         slug: c.slug,
         parentId: c.parent_id,
         position: c.position,
+        sizeGuideUrl: c.size_guide_url || "",
       }))
     );
     setLoading(false);
@@ -40,6 +41,7 @@ export function useCategories() {
       slug: cat.slug || slugify(cat.name),
       parent_id: cat.parentId || null,
       position: cat.position || 0,
+      size_guide_url: cat.sizeGuideUrl || null,
     });
     if (error) throw error;
     await load();
