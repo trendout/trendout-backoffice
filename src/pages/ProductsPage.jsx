@@ -34,7 +34,13 @@ export default function ProductsPage() {
     setSaving(true);
     setErrorMsg("");
     try {
-      await saveProduct(product);
+      const topCategoryObj = categories.find((c) => !c.parentId && c.name === product.topCategory);
+      const categoryObj = categories.find((c) => c.parentId === topCategoryObj?.id && c.name === product.category);
+      await saveProduct({
+        ...product,
+        topCategoryId: topCategoryObj?.id || null,
+        categoryId: categoryObj?.id || null,
+      });
       setModalProduct(undefined);
     } catch (err) {
       setErrorMsg(err.message || "Erro ao guardar o produto.");

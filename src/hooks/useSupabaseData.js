@@ -73,6 +73,8 @@ export function useProducts() {
         weight_grams: product.weightGrams,
         top_category: product.topCategory,
         category: product.category,
+        top_category_id: product.topCategoryId || null,
+        category_id: product.categoryId || null,
         description: product.description,
         base_price: product.basePrice,
         compare_at_price: product.compareAtPrice,
