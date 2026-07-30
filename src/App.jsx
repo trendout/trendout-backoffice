@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { LogOut, Package, Folder, ShoppingBag, ShoppingCart, Layers, Tag, FileText, Menu as MenuIcon, Palette, BarChart3, Settings, Image, Percent, Users, Radio, Star } from "lucide-react";
+import { LogOut, Package, Folder, ShoppingBag, ShoppingCart, Layers, Tag, FileText, Menu as MenuIcon, Palette, BarChart3, Settings, Image, Percent, Users, Radio, Star, Truck } from "lucide-react";
 import { useAuth } from "./hooks/useAuth";
 import { T } from "./lib/theme";
 import ProductsPage from "./pages/ProductsPage";
@@ -18,6 +18,7 @@ import LiveVisitorsPage from "./pages/LiveVisitorsPage";
 import SettingsPage from "./pages/SettingsPage";
 import HeroSlidesPage from "./pages/HeroSlidesPage";
 import VatRatesPage from "./pages/VatRatesPage";
+import ShippingRatesPage from "./pages/ShippingRatesPage";
 import { useNewOrdersCount } from "./hooks/useNewOrdersCount";
 import logo from "./assets/logo.png";
 
@@ -37,6 +38,7 @@ const NAV = [
   { key: "customers", label: "Clientes", icon: Users },
   { key: "reviews", label: "Avaliações", icon: Star },
   { key: "vat", label: "IVA por mercado", icon: Percent },
+  { key: "shipping", label: "Portes de Envio", icon: Truck },
   { key: "settings", label: "Definições", icon: Settings },
 ];
 
@@ -158,6 +160,7 @@ export default function App() {
           : page === "analytics" ? <AnalyticsPage />
           : page === "live" ? <LiveVisitorsPage />
           : page === "vat" ? <VatRatesPage />
+          : page === "shipping" ? <ShippingRatesPage />
           : page === "customers" ? <CustomersPage />
           : page === "reviews" ? <ReviewsPage />
           : page === "settings" ? <SettingsPage />
