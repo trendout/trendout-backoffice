@@ -134,6 +134,7 @@ export default function ProductModal({ product, categories, onClose, onSave }) {
             <option value="available">Disponível</option>
             <option value="unavailable">Indisponível (mostra aviso + contactos na ficha)</option>
             <option value="out_of_stock">Sem stock</option>
+            <option value="reserve_to_produce">Reservar para produzir (mostra aviso + contactos na ficha)</option>
           </select>
         </Field>
 
