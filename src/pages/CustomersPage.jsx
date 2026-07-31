@@ -8,6 +8,13 @@ import SendMessageModal from "../components/SendMessageModal";
 import { exportCustomersCsv } from "../lib/csvUtils";
 
 const PAGE_SIZES = [25, 50, 100];
+const RECONTACT_AFTER_DAYS = 15; // depois disto, um contacto volta a contar como "por contactar"
+
+function isDueForContact(lastContactedAt) {
+  if (!lastContactedAt) return true;
+  const daysSince = (Date.now() - new Date(lastContactedAt).getTime()) / (1000 * 60 * 60 * 24);
+  return daysSince > RECONTACT_AFTER_DAYS;
+}
 
 export default function CustomersPage() {
   const { customers, loading, reload } = useCustomers();
@@ -66,7 +73,7 @@ export default function CustomersPage() {
   // (ou contactados há mais tempo) — pensado para gerires o limite diário do Resend.
   const selectNextUncontacted = (n) => {
     const candidates = customers
-      .filter((c) => c.isNewsletterSubscriber)
+      .filter((c) => c.isNewsletterSubscriber && isDueForContact(c.lastContactedAt))
       .sort((a, b) => {
         const da = a.lastContactedAt ? new Date(a.lastContactedAt).getTime() : 0;
         const db = b.lastContactedAt ? new Date(b.lastContactedAt).getTime() : 0;
@@ -91,9 +98,9 @@ export default function CustomersPage() {
           <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, marginTop: 6, color: T.accent }}>{totalNewsletter}</div>
         </div>
         <div style={{ background: T.bgRaised, border: `1px solid ${T.border}`, borderRadius: 12, padding: 18, flex: "1 1 180px" }}>
-          <div style={{ fontSize: 11.5, color: T.muted, textTransform: "uppercase", letterSpacing: 0.4 }}>Nunca contactados</div>
+          <div style={{ fontSize: 11.5, color: T.muted, textTransform: "uppercase", letterSpacing: 0.4 }}>Por contactar</div>
           <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, marginTop: 6 }}>
-            {customers.filter((c) => c.isNewsletterSubscriber && !c.lastContactedAt).length}
+            {customers.filter((c) => c.isNewsletterSubscriber && isDueForContact(c.lastContactedAt)).length}
           </div>
         </div>
       </div>
@@ -210,8 +217,12 @@ export default function CustomersPage() {
                 <td style={{ padding: "12px 16px" }}>
                   {!c.isNewsletterSubscriber ? (
                     <span style={{ color: T.muted, fontSize: 12 }}>—</span>
-                  ) : c.lastContactedAt ? (
+                  ) : !isDueForContact(c.lastContactedAt) ? (
                     <span style={{ fontSize: 11.5, color: T.muted }}>Contactado {new Date(c.lastContactedAt).toLocaleDateString("pt-PT")}</span>
+                  ) : c.lastContactedAt ? (
+                    <span style={{ fontSize: 11.5, color: T.warn }} title={`Último contacto: ${new Date(c.lastContactedAt).toLocaleDateString("pt-PT")}`}>
+                      Não contactado <span style={{ opacity: 0.7 }}>(há +{RECONTACT_AFTER_DAYS}d)</span>
+                    </span>
                   ) : (
                     <span style={{ fontSize: 11.5, color: T.warn }}>Não contactado</span>
                   )}
