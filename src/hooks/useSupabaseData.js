@@ -28,6 +28,7 @@ export function useProducts() {
     const mapped = data.map((p) => ({
       id: p.id,
       name: p.name,
+      slug: p.slug,
       reference: p.reference,
       brand: p.brand,
       ean: p.ean,

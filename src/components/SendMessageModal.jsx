@@ -13,26 +13,39 @@ export default function SendMessageModal({ mode, customer, subscriberCount, sele
   const { products } = useProducts();
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
-  const [productId, setProductId] = useState("");
+  const [productIds, setProductIds] = useState([]);
+  const [pickerValue, setPickerValue] = useState("");
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [confirming, setConfirming] = useState(false);
 
-  const selectedProduct = products.find((p) => p.id === productId) || null;
+  const MAX_PRODUCTS = 8;
+  const selectedProducts = productIds.map((id) => products.find((p) => p.id === id)).filter(Boolean);
+  const availableProducts = products.filter((p) => !productIds.includes(p.id));
+
+  const addProduct = (id) => {
+    if (!id || productIds.length >= MAX_PRODUCTS) return;
+    setProductIds((prev) => [...prev, id]);
+    setPickerValue("");
+  };
+  const removeProduct = (id) => setProductIds((prev) => prev.filter((pid) => pid !== id));
 
   const send = async () => {
     setSending(true);
     setError("");
     try {
-      const productPayload = selectedProduct
-        ? { name: selectedProduct.name, image: selectedProduct.images?.[0] || null, price: selectedProduct.basePrice }
-        : null;
+      const productsPayload = selectedProducts.map((p) => ({
+        name: p.name,
+        slug: p.slug,
+        image: p.images?.[0] || null,
+        price: p.basePrice,
+      }));
 
       const body =
-        mode === "single" ? { mode: "single", toEmail: customer.email, subject, message, product: productPayload }
-        : mode === "selected" ? { mode: "selected", emails: selectedEmails, subject, message, product: productPayload }
-        : { mode: "broadcast", subject, message, product: productPayload };
+        mode === "single" ? { mode: "single", toEmail: customer.email, subject, message, products: productsPayload }
+        : mode === "selected" ? { mode: "selected", emails: selectedEmails, subject, message, products: productsPayload }
+        : { mode: "broadcast", subject, message, products: productsPayload };
 
       const { data, error: err } = await supabase.functions.invoke("send-campaign", { body });
       if (err) throw err;
@@ -102,34 +115,45 @@ export default function SendMessageModal({ mode, customer, subscriberCount, sele
               <input style={inputStyle} value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Ex: Um desconto especial para ti" />
             </Field>
 
-            <Field label="Produto em destaque (opcional)">
-              <select style={inputStyle} value={productId} onChange={(e) => setProductId(e.target.value)}>
-                <option value="">— Nenhum —</option>
-                {products.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name} — €{p.basePrice.toFixed(2)}</option>
-                ))}
-              </select>
+            <Field label={`Produtos em destaque (opcional — até ${MAX_PRODUCTS})`}>
+              <div style={{ display: "flex", gap: 8 }}>
+                <select style={{ ...inputStyle, flex: 1 }} value={pickerValue} onChange={(e) => setPickerValue(e.target.value)} disabled={productIds.length >= MAX_PRODUCTS}>
+                  <option value="">— Escolher produto —</option>
+                  {availableProducts.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name} — €{p.basePrice.toFixed(2)}</option>
+                  ))}
+                </select>
+                <Button variant="ghost" onClick={() => addProduct(pickerValue)} disabled={!pickerValue || productIds.length >= MAX_PRODUCTS} style={{ padding: "0 16px" }}>
+                  Adicionar
+                </Button>
+              </div>
+              {productIds.length >= MAX_PRODUCTS && (
+                <p style={{ fontSize: 11.5, color: T.warn, margin: "6px 0 0" }}>Chegaste ao máximo de {MAX_PRODUCTS} produtos.</p>
+              )}
             </Field>
 
-            {selectedProduct && (
-              <div style={{ display: "flex", alignItems: "center", gap: 12, background: T.bg, border: `1px solid ${T.border}`, borderRadius: 8, padding: 10, marginBottom: 14 }}>
-                {selectedProduct.images?.[0] ? (
-                  <img src={selectedProduct.images[0]} alt="" style={{ width: 48, height: 48, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} />
-                ) : (
-                  <div style={{ width: 48, height: 48, borderRadius: 6, background: T.bgRaised, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <Package size={18} color={T.muted} />
+            {selectedProducts.length > 0 && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
+                {selectedProducts.map((p) => (
+                  <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 12, background: T.bg, border: `1px solid ${T.border}`, borderRadius: 8, padding: 10 }}>
+                    {p.images?.[0] ? (
+                      <img src={p.images[0]} alt="" style={{ width: 40, height: 40, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} />
+                    ) : (
+                      <div style={{ width: 40, height: 40, borderRadius: 6, background: T.bgRaised, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <Package size={16} color={T.muted} />
+                      </div>
+                    )}
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600 }}>{p.name}</div>
+                      <div style={{ fontSize: 12, color: T.accent }}>€{p.basePrice.toFixed(2)}</div>
+                    </div>
+                    <button onClick={() => removeProduct(p.id)} style={{ background: "none", border: "none", color: T.muted, cursor: "pointer" }}><X size={16} /></button>
                   </div>
-                )}
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 600 }}>{selectedProduct.name}</div>
-                  <div style={{ fontSize: 12.5, color: T.accent }}>€{selectedProduct.basePrice.toFixed(2)}</div>
-                </div>
+                ))}
+                <p style={{ fontSize: 11.5, color: T.muted, margin: 0, lineHeight: 1.5 }}>
+                  Cada produto aparece no email com foto, nome e preço, clicável para a ficha do produto — antes da tua mensagem.
+                </p>
               </div>
-            )}
-            {selectedProduct && (
-              <p style={{ fontSize: 11.5, color: T.muted, margin: "-8px 0 14px", lineHeight: 1.5 }}>
-                Isto aparece no email, com a foto e o preço, logo antes da tua mensagem.
-              </p>
             )}
 
             <Field label="Mensagem">

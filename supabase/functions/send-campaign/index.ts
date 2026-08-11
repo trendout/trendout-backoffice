@@ -19,29 +19,62 @@ const corsHeaders = {
 const FROM_ADDRESS = "Trendout <noreply@trendout.pt>";
 const LOGO_URL = `${Deno.env.get("SUPABASE_URL")}/storage/v1/object/public/product-images/trendout-logo.png`;
 
-function productBlockHtml(product: { name: string; image: string | null; price: number } | null) {
-  if (!product) return "";
+const STORE_URL = "https://loja.trendout.pt";
+
+function productBlockHtml(products: { name: string; slug: string; image: string | null; price: number }[] | null) {
+  if (!products || products.length === 0) return "";
+
+  const rows = products.map((p) => {
+    const productUrl = `${STORE_URL}/produto/${p.slug}`;
+    return `
+      <tr>
+        <td style="padding:8px 0;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #eee; border-radius:10px; overflow:hidden;">
+            <tr>
+              ${p.image ? `
+              <td width="72" style="padding:0;">
+                <a href="${productUrl}" style="display:block;">
+                  <img src="${p.image}" width="72" height="72" alt="${p.name}" style="display:block; border:0; width:72px; height:72px; object-fit:cover;" />
+                </a>
+              </td>` : ""}
+              <td style="padding:12px 14px; vertical-align:middle;">
+                <a href="${productUrl}" style="text-decoration:none; color:#1a1a1a;">
+                  <div style="font-size:13.5px; font-weight:bold;">${p.name}</div>
+                  <div style="font-size:13.5px; color:#7c9a2e; margin-top:4px;">€${Number(p.price).toFixed(2)} — Ver produto →</div>
+                </a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    `;
+  }).join("");
+
   return `
     <tr>
       <td style="padding:24px 28px 0;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #eee; border-radius:10px; overflow:hidden;">
-          <tr>
-            ${product.image ? `
-            <td width="90" style="padding:0;">
-              <img src="${product.image}" width="90" height="90" alt="${product.name}" style="display:block; border:0; width:90px; height:90px; object-fit:cover;" />
-            </td>` : ""}
-            <td style="padding:14px 16px; vertical-align:middle;">
-              <div style="font-size:14px; font-weight:bold; color:#1a1a1a;">${product.name}</div>
-              <div style="font-size:14px; color:#7c9a2e; margin-top:4px;">€${Number(product.price).toFixed(2)}</div>
-            </td>
-          </tr>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+          ${rows}
         </table>
       </td>
     </tr>
   `;
 }
 
-function emailHtml(storeName: string, message: string, unsubscribeUrl: string | null, product: { name: string; image: string | null; price: number } | null = null) {
+function subscriptionPromptHtml(unsubscribeUrl: string | null) {
+  if (!unsubscribeUrl) return "";
+  return `
+    <tr>
+      <td style="padding:20px 28px 24px; text-align:center; border-top:1px solid #eee;">
+        <p style="font-size:12.5px; color:#666; margin:0 0 10px;">Queres continuar a receber estas notificações?</p>
+        <a href="${STORE_URL}" style="display:inline-block; padding:8px 18px; font-size:12.5px; font-weight:bold; color:#0f1210; background-color:#c9ff3f; border-radius:6px; text-decoration:none; margin:0 6px;">Sim</a>
+        <a href="${unsubscribeUrl}" style="display:inline-block; padding:8px 18px; font-size:12.5px; font-weight:bold; color:#666; background-color:#f0f0f0; border-radius:6px; text-decoration:none; margin:0 6px;">Não</a>
+      </td>
+    </tr>
+  `;
+}
+
+function emailHtml(storeName: string, message: string, unsubscribeUrl: string | null, products: { name: string; slug: string; image: string | null; price: number }[] | null = null) {
   const bodyHtml = message.replace(/\n/g, "<br>");
 
   return `
@@ -54,18 +87,13 @@ function emailHtml(storeName: string, message: string, unsubscribeUrl: string | 
                 <img src="${LOGO_URL}" height="40" alt="${storeName}" style="display:block; border:0;" />
               </td>
             </tr>
-            ${productBlockHtml(product)}
+            ${productBlockHtml(products)}
             <tr>
               <td style="padding:24px 28px; color:#1a1a1a; font-size:14px; line-height:1.7;">
                 ${bodyHtml}
               </td>
             </tr>
-            ${unsubscribeUrl ? `
-            <tr>
-              <td style="padding:0 28px 24px; text-align:center;">
-                <a href="${unsubscribeUrl}" style="color:#999; font-size:11px; text-decoration:underline;">Cancelar subscrição</a>
-              </td>
-            </tr>` : ""}
+            ${subscriptionPromptHtml(unsubscribeUrl)}
           </table>
         </td>
       </tr>
@@ -97,8 +125,9 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const { mode, toEmail, emails: selectedEmails, subject, message, product } = await req.json();
+    const { mode, toEmail, emails: selectedEmails, subject, message, products } = await req.json();
     if (!subject || !message) throw new Error("Falta o assunto ou a mensagem.");
+    if (products && (!Array.isArray(products) || products.length > 8)) throw new Error("No máximo 8 produtos.");
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -111,7 +140,7 @@ Deno.serve(async (req) => {
 
     if (mode === "single") {
       if (!toEmail) throw new Error("Falta o email do cliente.");
-      const html = emailHtml(storeName, message, null, product);
+      const html = emailHtml(storeName, message, null, products);
       const result = await sendOne(resendKey, toEmail, subject, html);
       if (!result.ok) throw new Error(`O Resend recusou o envio (status ${result.status}): ${result.body}`);
 
@@ -149,7 +178,7 @@ Deno.serve(async (req) => {
         const emailPayloads = batch.map((s) => ({
           to: s.email,
           subject,
-          html: emailHtml(storeName, message, `${Deno.env.get("SUPABASE_URL")}/functions/v1/unsubscribe?token=${s.unsubscribe_token}`, product),
+          html: emailHtml(storeName, message, `${Deno.env.get("SUPABASE_URL")}/functions/v1/unsubscribe?token=${s.unsubscribe_token}`, products),
         }));
         const result = await sendBatch(resendKey, emailPayloads);
         if (result.ok) {
