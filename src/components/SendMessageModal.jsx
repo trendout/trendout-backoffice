@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { X, Send } from "lucide-react";
+import { X, Send, Package } from "lucide-react";
 import { T, inputStyle, Field, Button } from "../lib/theme";
 import { supabase } from "../lib/supabase";
+import { useProducts } from "../hooks/useSupabaseData";
 
 /**
  * mode: "single" (para um cliente, com o email/favoritos já conhecidos)
@@ -9,21 +10,29 @@ import { supabase } from "../lib/supabase";
  *    ou "broadcast" (para todos os subscritores ativos da newsletter)
  */
 export default function SendMessageModal({ mode, customer, subscriberCount, selectedEmails, onClose, onSent }) {
+  const { products } = useProducts();
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
+  const [productId, setProductId] = useState("");
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [confirming, setConfirming] = useState(false);
 
+  const selectedProduct = products.find((p) => p.id === productId) || null;
+
   const send = async () => {
     setSending(true);
     setError("");
     try {
+      const productPayload = selectedProduct
+        ? { name: selectedProduct.name, image: selectedProduct.images?.[0] || null, price: selectedProduct.basePrice }
+        : null;
+
       const body =
-        mode === "single" ? { mode: "single", toEmail: customer.email, subject, message }
-        : mode === "selected" ? { mode: "selected", emails: selectedEmails, subject, message }
-        : { mode: "broadcast", subject, message };
+        mode === "single" ? { mode: "single", toEmail: customer.email, subject, message, product: productPayload }
+        : mode === "selected" ? { mode: "selected", emails: selectedEmails, subject, message, product: productPayload }
+        : { mode: "broadcast", subject, message, product: productPayload };
 
       const { data, error: err } = await supabase.functions.invoke("send-campaign", { body });
       if (err) throw err;
@@ -92,6 +101,37 @@ export default function SendMessageModal({ mode, customer, subscriberCount, sele
             <Field label="Assunto">
               <input style={inputStyle} value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Ex: Um desconto especial para ti" />
             </Field>
+
+            <Field label="Produto em destaque (opcional)">
+              <select style={inputStyle} value={productId} onChange={(e) => setProductId(e.target.value)}>
+                <option value="">— Nenhum —</option>
+                {products.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name} — €{p.basePrice.toFixed(2)}</option>
+                ))}
+              </select>
+            </Field>
+
+            {selectedProduct && (
+              <div style={{ display: "flex", alignItems: "center", gap: 12, background: T.bg, border: `1px solid ${T.border}`, borderRadius: 8, padding: 10, marginBottom: 14 }}>
+                {selectedProduct.images?.[0] ? (
+                  <img src={selectedProduct.images[0]} alt="" style={{ width: 48, height: 48, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} />
+                ) : (
+                  <div style={{ width: 48, height: 48, borderRadius: 6, background: T.bgRaised, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Package size={18} color={T.muted} />
+                  </div>
+                )}
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>{selectedProduct.name}</div>
+                  <div style={{ fontSize: 12.5, color: T.accent }}>€{selectedProduct.basePrice.toFixed(2)}</div>
+                </div>
+              </div>
+            )}
+            {selectedProduct && (
+              <p style={{ fontSize: 11.5, color: T.muted, margin: "-8px 0 14px", lineHeight: 1.5 }}>
+                Isto aparece no email, com a foto e o preço, logo antes da tua mensagem.
+              </p>
+            )}
+
             <Field label="Mensagem">
               <textarea
                 style={{ ...inputStyle, minHeight: 140, resize: "vertical" }}

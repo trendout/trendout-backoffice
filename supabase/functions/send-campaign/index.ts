@@ -19,7 +19,29 @@ const corsHeaders = {
 const FROM_ADDRESS = "Trendout <noreply@trendout.pt>";
 const LOGO_URL = `${Deno.env.get("SUPABASE_URL")}/storage/v1/object/public/product-images/trendout-logo.png`;
 
-function emailHtml(storeName: string, message: string, unsubscribeUrl: string | null) {
+function productBlockHtml(product: { name: string; image: string | null; price: number } | null) {
+  if (!product) return "";
+  return `
+    <tr>
+      <td style="padding:24px 28px 0;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #eee; border-radius:10px; overflow:hidden;">
+          <tr>
+            ${product.image ? `
+            <td width="90" style="padding:0;">
+              <img src="${product.image}" width="90" height="90" alt="${product.name}" style="display:block; border:0; width:90px; height:90px; object-fit:cover;" />
+            </td>` : ""}
+            <td style="padding:14px 16px; vertical-align:middle;">
+              <div style="font-size:14px; font-weight:bold; color:#1a1a1a;">${product.name}</div>
+              <div style="font-size:14px; color:#7c9a2e; margin-top:4px;">€${Number(product.price).toFixed(2)}</div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  `;
+}
+
+function emailHtml(storeName: string, message: string, unsubscribeUrl: string | null, product: { name: string; image: string | null; price: number } | null = null) {
   const bodyHtml = message.replace(/\n/g, "<br>");
 
   return `
@@ -32,8 +54,9 @@ function emailHtml(storeName: string, message: string, unsubscribeUrl: string | 
                 <img src="${LOGO_URL}" height="40" alt="${storeName}" style="display:block; border:0;" />
               </td>
             </tr>
+            ${productBlockHtml(product)}
             <tr>
-              <td style="padding:32px 28px; color:#1a1a1a; font-size:14px; line-height:1.7;">
+              <td style="padding:24px 28px; color:#1a1a1a; font-size:14px; line-height:1.7;">
                 ${bodyHtml}
               </td>
             </tr>
@@ -74,7 +97,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const { mode, toEmail, emails: selectedEmails, subject, message } = await req.json();
+    const { mode, toEmail, emails: selectedEmails, subject, message, product } = await req.json();
     if (!subject || !message) throw new Error("Falta o assunto ou a mensagem.");
 
     const supabase = createClient(
@@ -88,7 +111,7 @@ Deno.serve(async (req) => {
 
     if (mode === "single") {
       if (!toEmail) throw new Error("Falta o email do cliente.");
-      const html = emailHtml(storeName, message, null);
+      const html = emailHtml(storeName, message, null, product);
       const result = await sendOne(resendKey, toEmail, subject, html);
       if (!result.ok) throw new Error(`O Resend recusou o envio (status ${result.status}): ${result.body}`);
 
@@ -126,7 +149,7 @@ Deno.serve(async (req) => {
         const emailPayloads = batch.map((s) => ({
           to: s.email,
           subject,
-          html: emailHtml(storeName, message, `${Deno.env.get("SUPABASE_URL")}/functions/v1/unsubscribe?token=${s.unsubscribe_token}`),
+          html: emailHtml(storeName, message, `${Deno.env.get("SUPABASE_URL")}/functions/v1/unsubscribe?token=${s.unsubscribe_token}`, product),
         }));
         const result = await sendBatch(resendKey, emailPayloads);
         if (result.ok) {
