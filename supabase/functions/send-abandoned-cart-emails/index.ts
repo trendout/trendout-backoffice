@@ -18,18 +18,21 @@ const LOGO_URL = `${Deno.env.get("SUPABASE_URL")}/storage/v1/object/public/produ
 const STORE_URL = "https://loja.trendout.pt";
 
 function emailHtml(items: any[], subtotal: number, storeName: string) {
-  const itemsHtml = items.map((it: any) => `
+  const itemsHtml = items.map((it: any) => {
+    const productUrl = it.slug ? `${STORE_URL}/produto/${it.slug}` : STORE_URL;
+    return `
     <tr>
       <td style="padding:10px 0; width:64px;">
-        ${it.image ? `<img src="${it.image}" width="56" height="56" style="border-radius:8px; object-fit:cover; display:block;" />` : ""}
+        ${it.image ? `<a href="${productUrl}"><img src="${it.image}" width="56" height="56" style="border-radius:8px; object-fit:cover; display:block;" /></a>` : ""}
       </td>
       <td style="padding:10px 0 10px 12px;">
-        ${it.name}${it.size ? ` — ${it.size}` : ""}${it.color ? ` (${it.color})` : ""} × ${it.qty}<br />
-        <a href="${STORE_URL}" style="color:#7c9a2e; font-size:12px; text-decoration:none;">Ver produto →</a>
+        <a href="${productUrl}" style="color:#1a1a1a; text-decoration:none;">${it.name}${it.size ? ` — ${it.size}` : ""}${it.color ? ` (${it.color})` : ""} × ${it.qty}</a><br />
+        <a href="${productUrl}" style="color:#7c9a2e; font-size:12px; text-decoration:none;">Ver produto →</a>
       </td>
       <td style="padding:10px 0; text-align:right;">€${(it.price * it.qty).toFixed(2)}</td>
     </tr>
-  `).join("");
+  `;
+  }).join("");
 
   return `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; background:#f4f4f4; padding:24px 0;">
