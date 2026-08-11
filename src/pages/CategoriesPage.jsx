@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Plus, Pencil, Trash2, ArrowUp, ArrowDown, ChevronDown, ChevronRight } from "lucide-react";
 import { T, Button } from "../lib/theme";
 import { useCategories } from "../hooks/useCategories";
@@ -10,6 +10,13 @@ export default function CategoriesPage() {
   const [deleteId, setDeleteId] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [collapsed, setCollapsed] = useState(() => new Set());
+  const initializedRef = useRef(false);
+
+  useEffect(() => {
+    if (initializedRef.current || categories.length === 0) return;
+    initializedRef.current = true;
+    setCollapsed(new Set(categories.filter((c) => !c.parentId).map((c) => c.id)));
+  }, [categories]);
 
   const toggleCollapsed = (id) => {
     setCollapsed((prev) => {
