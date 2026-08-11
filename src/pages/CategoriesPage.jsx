@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Plus, Pencil, Trash2, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Pencil, Trash2, ArrowUp, ArrowDown, ChevronDown, ChevronRight } from "lucide-react";
 import { T, Button } from "../lib/theme";
 import { useCategories } from "../hooks/useCategories";
 import CategoryModal from "../components/CategoryModal";
@@ -9,6 +9,15 @@ export default function CategoriesPage() {
   const [modal, setModal] = useState(undefined); // { category, isTop, parentId }
   const [deleteId, setDeleteId] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const [collapsed, setCollapsed] = useState(() => new Set());
+
+  const toggleCollapsed = (id) => {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
 
   if (loading) return <div style={{ color: T.muted, fontSize: 13.5 }}>A carregar categorias...</div>;
 
@@ -60,35 +69,45 @@ export default function CategoriesPage() {
           return (
             <div key={top.id} style={{ background: T.bgRaised, border: `1px solid ${T.border}`, borderRadius: 12, overflow: "hidden" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", background: T.bgRaised2 }}>
+                <button onClick={() => toggleCollapsed(top.id)} style={{ background: "none", border: "none", color: T.muted, cursor: "pointer", display: "flex" }}>
+                  {collapsed.has(top.id) ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+                </button>
                 <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
                   <button onClick={() => move(topCategories, ti, -1)} disabled={ti === 0} style={{ background: "none", border: "none", color: ti === 0 ? "#3a3f3a" : T.muted, cursor: ti === 0 ? "default" : "pointer" }}><ArrowUp size={12} /></button>
                   <button onClick={() => move(topCategories, ti, 1)} disabled={ti === topCategories.length - 1} style={{ background: "none", border: "none", color: ti === topCategories.length - 1 ? "#3a3f3a" : T.muted, cursor: ti === topCategories.length - 1 ? "default" : "pointer" }}><ArrowDown size={12} /></button>
                 </div>
                 <div style={{ fontWeight: 700, fontSize: 14, flex: 1 }}>{top.name}</div>
+                {collapsed.has(top.id) && subs.length > 0 && (
+                  <span style={{ fontSize: 11.5, color: T.muted, background: T.bg, borderRadius: 999, padding: "2px 8px" }}>{subs.length}</span>
+                )}
                 <span style={{ fontSize: 11.5, color: T.muted }}>/{top.slug}</span>
                 <button onClick={() => setModal({ category: top, isTop: true })} style={{ background: "none", border: "none", color: T.text, cursor: "pointer" }}><Pencil size={14} /></button>
                 <button onClick={() => setDeleteId(top.id)} style={{ background: "none", border: "none", color: T.danger, cursor: "pointer" }}><Trash2 size={14} /></button>
               </div>
-              {subs.map((sub, si) => (
-                <div key={sub.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px 10px 40px", borderTop: `1px solid ${T.border}` }}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                    <button onClick={() => move(subs, si, -1)} disabled={si === 0} style={{ background: "none", border: "none", color: si === 0 ? "#3a3f3a" : T.muted, cursor: si === 0 ? "default" : "pointer" }}><ArrowUp size={11} /></button>
-                    <button onClick={() => move(subs, si, 1)} disabled={si === subs.length - 1} style={{ background: "none", border: "none", color: si === subs.length - 1 ? "#3a3f3a" : T.muted, cursor: si === subs.length - 1 ? "default" : "pointer" }}><ArrowDown size={11} /></button>
+              {!collapsed.has(top.id) && (
+                <>
+                  {subs.map((sub, si) => (
+                    <div key={sub.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px 10px 40px", borderTop: `1px solid ${T.border}` }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                        <button onClick={() => move(subs, si, -1)} disabled={si === 0} style={{ background: "none", border: "none", color: si === 0 ? "#3a3f3a" : T.muted, cursor: si === 0 ? "default" : "pointer" }}><ArrowUp size={11} /></button>
+                        <button onClick={() => move(subs, si, 1)} disabled={si === subs.length - 1} style={{ background: "none", border: "none", color: si === subs.length - 1 ? "#3a3f3a" : T.muted, cursor: si === subs.length - 1 ? "default" : "pointer" }}><ArrowDown size={11} /></button>
+                      </div>
+                      <div style={{ fontSize: 13, flex: 1 }}>{sub.name}</div>
+                      <span style={{ fontSize: 11.5, color: T.muted }}>/{top.slug}/{sub.slug}</span>
+                      <button onClick={() => setModal({ category: sub, isTop: false })} style={{ background: "none", border: "none", color: T.text, cursor: "pointer" }}><Pencil size={13} /></button>
+                      <button onClick={() => setDeleteId(sub.id)} style={{ background: "none", border: "none", color: T.danger, cursor: "pointer" }}><Trash2 size={13} /></button>
+                    </div>
+                  ))}
+                  <div style={{ padding: "10px 16px 10px 40px", borderTop: subs.length ? `1px solid ${T.border}` : "none" }}>
+                    <button
+                      onClick={() => setModal({ category: null, isTop: false, parentId: top.id })}
+                      style={{ background: "none", border: "none", color: T.accent, cursor: "pointer", fontSize: 12.5, display: "flex", alignItems: "center", gap: 5, padding: 0 }}
+                    >
+                      <Plus size={12} /> Adicionar subcategoria
+                    </button>
                   </div>
-                  <div style={{ fontSize: 13, flex: 1 }}>{sub.name}</div>
-                  <span style={{ fontSize: 11.5, color: T.muted }}>/{top.slug}/{sub.slug}</span>
-                  <button onClick={() => setModal({ category: sub, isTop: false })} style={{ background: "none", border: "none", color: T.text, cursor: "pointer" }}><Pencil size={13} /></button>
-                  <button onClick={() => setDeleteId(sub.id)} style={{ background: "none", border: "none", color: T.danger, cursor: "pointer" }}><Trash2 size={13} /></button>
-                </div>
-              ))}
-              <div style={{ padding: "10px 16px 10px 40px", borderTop: subs.length ? `1px solid ${T.border}` : "none" }}>
-                <button
-                  onClick={() => setModal({ category: null, isTop: false, parentId: top.id })}
-                  style={{ background: "none", border: "none", color: T.accent, cursor: "pointer", fontSize: 12.5, display: "flex", alignItems: "center", gap: 5, padding: 0 }}
-                >
-                  <Plus size={12} /> Adicionar subcategoria
-                </button>
-              </div>
+                </>
+              )}
             </div>
           );
         })}
