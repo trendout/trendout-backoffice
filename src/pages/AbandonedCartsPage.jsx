@@ -43,8 +43,8 @@ export default function AbandonedCartsPage() {
       </div>
 
       <p style={{ fontSize: 12.5, color: T.muted, margin: "0 0 16px", lineHeight: 1.6 }}>
-        Só aparecem aqui clientes com <strong>sessão iniciada</strong> na loja que tenham artigos no carrinho — carrinhos de visitantes anónimos
-        não têm email associado, por isso não conseguimos avisá-los. O aviso automático é enviado sozinho ao fim de 10 horas sem alterações no carrinho.
+        Inclui clientes com conta e também visitantes sem conta, assim que escrevem um email válido no checkout — mesmo sem terminarem a compra.
+        O aviso automático é enviado sozinho ao fim de 10 horas sem alterações no carrinho.
       </p>
 
       {errorMsg && <div style={{ color: T.danger, fontSize: 13, marginBottom: 14 }}>{errorMsg}</div>}
@@ -61,7 +61,12 @@ export default function AbandonedCartsPage() {
             <div key={c.id} style={{ background: T.bgRaised, border: `1px solid ${T.border}`, borderRadius: 12, padding: 18 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: 14 }}>{c.customerEmail}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>{c.customerEmail}</div>
+                    {!c.customerId && (
+                      <span style={{ fontSize: 10.5, color: T.muted, border: `1px solid ${T.border}`, borderRadius: 4, padding: "1px 6px" }}>Convidado</span>
+                    )}
+                  </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: T.muted, marginTop: 3 }}>
                     <Clock size={12} /> Parado {timeSince(c.updatedAt)}
                     {c.reminderSentAt && <span style={{ color: T.accent, marginLeft: 8 }}>· Aviso já enviado</span>}
