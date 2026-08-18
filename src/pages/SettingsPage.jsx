@@ -295,7 +295,7 @@ export default function SettingsPage() {
           {[
             { key: "visa", label: "VISA" },
             { key: "mastercard", label: "Mastercard" },
-            { key: "amex", label: "AMEX" },
+            { key: "mbway", label: "MB WAY" },
             { key: "transfer", label: "Transferência" },
           ].map((m) => (
             <label key={m.key} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12.5, color: T.text, cursor: "pointer" }}>
