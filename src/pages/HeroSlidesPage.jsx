@@ -1,16 +1,35 @@
 import React, { useState } from "react";
-import { Plus, Pencil, Trash2, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Pencil, Trash2, ArrowUp, ArrowDown, RotateCw } from "lucide-react";
 import { T, Button } from "../lib/theme";
 import { useHeroSlides } from "../hooks/useHeroSlides";
+import { useStoreSettings } from "../hooks/useStoreSettings";
 import HeroSlideModal from "../components/HeroSlideModal";
+
+const ROTATION_OPTIONS = [
+  { value: "manual", label: "Modo manual (é sempre o 1º slide da lista, como já é hoje)" },
+  { value: "daily", label: "Roda 1 em 1 dia" },
+  { value: "every_2_days", label: "Roda 2 em 2 dias" },
+  { value: "weekly", label: "Roda 7 em 7 dias" },
+];
 
 export default function HeroSlidesPage() {
   const { slides, loading, saveSlide, deleteSlide, reorder } = useHeroSlides();
+  const { settings, loading: settingsLoading, updateSettings } = useStoreSettings();
   const [modalSlide, setModalSlide] = useState(undefined);
   const [deleteId, setDeleteId] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const [savingRotation, setSavingRotation] = useState(false);
 
   if (loading) return <div style={{ color: T.muted, fontSize: 13.5 }}>A carregar slides...</div>;
+
+  const changeRotation = async (mode) => {
+    setSavingRotation(true);
+    try {
+      await updateSettings({ heroRotationMode: mode });
+    } finally {
+      setSavingRotation(false);
+    }
+  };
 
   const save = async (slide) => {
     try {
@@ -38,6 +57,29 @@ export default function HeroSlidesPage() {
       </div>
 
       {errorMsg && <div style={{ color: T.danger, fontSize: 13, marginBottom: 14 }}>{errorMsg}</div>}
+
+      <div style={{ background: T.bgRaised, border: `1px solid ${T.border}`, borderRadius: 12, padding: 20, marginBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, color: T.muted, fontSize: 12, textTransform: "uppercase", letterSpacing: 0.4 }}>
+          <RotateCw size={14} /> Rotação automática do primeiro slide
+        </div>
+        {settingsLoading ? (
+          <span style={{ color: T.muted, fontSize: 13 }}>A carregar...</span>
+        ) : (
+          <select
+            value={settings?.heroRotationMode || "manual"}
+            onChange={(e) => changeRotation(e.target.value)}
+            disabled={savingRotation}
+            style={{ width: "100%", maxWidth: 420, padding: "10px 12px", borderRadius: 8, border: `1px solid ${T.border}`, background: T.bg, color: T.text, fontSize: 13.5 }}
+          >
+            {ROTATION_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        )}
+        <p style={{ fontSize: 11.5, color: T.muted, margin: "10px 0 0", lineHeight: 1.5, maxWidth: 480 }}>
+          Quando ativa, o slide que aparece primeiro ao visitante muda automaticamente ao fim do período escolhido — avança sempre pela mesma ordem que já definiste em baixo, só muda por onde começa. A rotação dentro da própria visita (a cada 6 segundos) continua igual.
+        </p>
+      </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {slides.map((s, idx) => (
