@@ -36,5 +36,11 @@ export function useAbandonedCarts() {
     await load();
   };
 
-  return { carts, loading, reload: load, sendReminderNow };
+  const deleteCart = async (cartId) => {
+    const { error } = await supabase.from("cart_snapshots").delete().eq("id", cartId);
+    if (error) throw error;
+    setCarts((prev) => prev.filter((c) => c.id !== cartId));
+  };
+
+  return { carts, loading, reload: load, sendReminderNow, deleteCart };
 }

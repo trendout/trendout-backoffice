@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ShoppingCart, Send, Clock } from "lucide-react";
+import { ShoppingCart, Send, Clock, Trash2 } from "lucide-react";
 import { T, Button } from "../lib/theme";
 import { useAbandonedCarts } from "../hooks/useAbandonedCarts";
 
@@ -11,8 +11,9 @@ function timeSince(dateStr) {
 }
 
 export default function AbandonedCartsPage() {
-  const { carts, loading, sendReminderNow } = useAbandonedCarts();
+  const { carts, loading, sendReminderNow, deleteCart } = useAbandonedCarts();
   const [sendingId, setSendingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
 
   const handleSend = async (cartId) => {
@@ -24,6 +25,19 @@ export default function AbandonedCartsPage() {
       setErrorMsg(err.message || "Erro ao enviar o email.");
     } finally {
       setSendingId(null);
+    }
+  };
+
+  const handleDelete = async (cartId) => {
+    if (!confirm("Eliminar este carrinho abandonado? Deixa de aparecer nesta lista e não recebe mais avisos.")) return;
+    setDeletingId(cartId);
+    setErrorMsg("");
+    try {
+      await deleteCart(cartId);
+    } catch (err) {
+      setErrorMsg(err.message || "Erro ao eliminar o carrinho.");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -74,14 +88,24 @@ export default function AbandonedCartsPage() {
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: T.accent }}>€{c.subtotal.toFixed(2)}</div>
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleSend(c.id)}
-                    disabled={sendingId === c.id}
-                    style={{ fontSize: 12, padding: "6px 12px", marginTop: 6 }}
-                  >
-                    <Send size={12} /> {sendingId === c.id ? "A enviar..." : "Enviar aviso agora"}
-                  </Button>
+                  <div style={{ display: "flex", gap: 6, marginTop: 6, justifyContent: "flex-end" }}>
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleSend(c.id)}
+                      disabled={sendingId === c.id}
+                      style={{ fontSize: 12, padding: "6px 12px" }}
+                    >
+                      <Send size={12} /> {sendingId === c.id ? "A enviar..." : "Enviar aviso agora"}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleDelete(c.id)}
+                      disabled={deletingId === c.id}
+                      style={{ fontSize: 12, padding: "6px 10px", color: T.danger }}
+                    >
+                      <Trash2 size={12} />
+                    </Button>
+                  </div>
                 </div>
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
