@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Save, Globe, Building2, Code2, CreditCard, Zap, AlertTriangle, Search, Wrench, Megaphone, Gift, Tag } from "lucide-react";
+import { Save, Globe, Building2, Code2, CreditCard, Zap, AlertTriangle, Search, Wrench, Megaphone, Gift, Tag, Mail } from "lucide-react";
 import { T, inputStyle, Field, Button } from "../lib/theme";
 import { useStoreSettings } from "../hooks/useStoreSettings";
 
@@ -57,6 +57,11 @@ export default function SettingsPage() {
         googleAdsConversionLabel: form.googleAdsConversionLabel,
         metaPixelId: form.metaPixelId,
         ga4MeasurementId: form.ga4MeasurementId,
+        newsletterSectionEnabled: form.newsletterSectionEnabled,
+        newsletterEyebrow: form.newsletterEyebrow,
+        newsletterTitle: form.newsletterTitle,
+        newsletterEmailPlaceholder: form.newsletterEmailPlaceholder,
+        newsletterButtonLabel: form.newsletterButtonLabel,
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
@@ -140,6 +145,36 @@ export default function SettingsPage() {
             <Field label="Código do cupão a mostrar">
               <input style={inputStyle} value={form.promoPopupCouponCode || ""} onChange={(e) => update("promoPopupCouponCode", e.target.value.toUpperCase())} placeholder="BEMVINDO10" />
             </Field>
+          </>
+        )}
+      </div>
+
+      <div style={{ background: T.bgRaised, border: `1px solid ${T.border}`, borderRadius: 12, padding: 24, marginBottom: 18 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 18, color: T.muted, fontSize: 12, textTransform: "uppercase", letterSpacing: 0.4 }}>
+          <Mail size={14} /> Newsletter (secção na homepage)
+        </div>
+
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: T.text, cursor: "pointer", marginBottom: form.newsletterSectionEnabled ? 18 : 0 }}>
+          <input type="checkbox" checked={form.newsletterSectionEnabled !== false} onChange={(e) => update("newsletterSectionEnabled", e.target.checked)} style={{ accentColor: T.accent }} />
+          Mostrar esta secção na homepage
+        </label>
+
+        {form.newsletterSectionEnabled !== false && (
+          <>
+            <Field label="Texto pequeno, por cima do título">
+              <input style={inputStyle} value={form.newsletterEyebrow || ""} onChange={(e) => update("newsletterEyebrow", e.target.value)} placeholder="Junta-te à comunidade" />
+            </Field>
+            <Field label="Título">
+              <input style={inputStyle} value={form.newsletterTitle || ""} onChange={(e) => update("newsletterTitle", e.target.value)} placeholder="Novidades e Promoções" />
+            </Field>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <Field label="Texto no campo de email">
+                <input style={inputStyle} value={form.newsletterEmailPlaceholder || ""} onChange={(e) => update("newsletterEmailPlaceholder", e.target.value)} placeholder="O teu email" />
+              </Field>
+              <Field label="Texto do botão">
+                <input style={inputStyle} value={form.newsletterButtonLabel || ""} onChange={(e) => update("newsletterButtonLabel", e.target.value)} placeholder="Subscrever" />
+              </Field>
+            </div>
           </>
         )}
       </div>
