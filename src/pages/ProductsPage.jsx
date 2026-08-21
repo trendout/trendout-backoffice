@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Plus, Pencil, Trash2, Search, AlertTriangle, Minus, X, Percent, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, AlertTriangle, Minus, X, Percent, ChevronLeft, ChevronRight, ArrowUpDown, CheckSquare, Square } from "lucide-react";
 import { T, inputStyle, Button } from "../lib/theme";
 import { useProducts } from "../hooks/useSupabaseData";
 import { useCategories } from "../hooks/useCategories";
@@ -8,12 +8,13 @@ import ProductModal from "../components/ProductModal";
 import BulkPriceModal from "../components/BulkPriceModal";
 
 export default function ProductsPage() {
-  const { products, loading, saveProduct, deleteProduct, quickUpdate, adjustVariantStock, bulkAdjustPrices } = useProducts();
+  const { products, loading, saveProduct, deleteProduct, deleteProducts, quickUpdate, adjustVariantStock, bulkAdjustPrices } = useProducts();
   const { categories, loading: categoriesLoading } = useCategories();
 
   const [query, setQuery] = useState("");
   const [modalProduct, setModalProduct] = useState(undefined); // undefined=fechado, null=novo, obj=editar
   const [deleteId, setDeleteId] = useState(null);
+  const [deletingSelected, setDeletingSelected] = useState(false);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [stockPopoverId, setStockPopoverId] = useState(null);
@@ -21,14 +22,71 @@ export default function ProductsPage() {
   const [stockPopoverPos, setStockPopoverPos] = useState({ top: 0, left: 0 });
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
+  const [sortField, setSortField] = useState(null); // null = ordem natural | 'name' | 'brand' | 'price' | 'stock'
+  const [sortDir, setSortDir] = useState("asc");
+  const [checkedIds, setCheckedIds] = useState(new Set());
 
-  const filtered = products.filter((p) => p.name.toLowerCase().includes(query.toLowerCase()));
+  const totalStock = (p) => p.variants.reduce((s, v) => s + v.stock, 0);
+
+  const sortValue = (p, field) => {
+    switch (field) {
+      case "name": return p.name.toLowerCase();
+      case "brand": return (p.brand || "").toLowerCase();
+      case "price": return p.basePrice || 0;
+      case "stock": return totalStock(p);
+      default: return 0;
+    }
+  };
+
+  const toggleSort = (field) => {
+    if (sortField === field) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDir(field === "name" || field === "brand" ? "asc" : "desc");
+    }
+  };
+
+  let filtered = products.filter((p) => p.name.toLowerCase().includes(query.toLowerCase()));
+  if (sortField) {
+    filtered = [...filtered].sort((a, b) => {
+      const va = sortValue(a, sortField);
+      const vb = sortValue(b, sortField);
+      const cmp = typeof va === "string" ? va.localeCompare(vb) : va - vb;
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+  }
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const pageItems = filtered.slice((page - 1) * pageSize, page * pageSize);
 
-  useEffect(() => { setPage(1); }, [query, pageSize]);
-  const totalStock = (p) => p.variants.reduce((s, v) => s + v.stock, 0);
+  useEffect(() => { setPage(1); }, [query, sortField, sortDir, pageSize]);
   const quickInputStyle = { ...inputStyle, padding: "6px 8px", fontSize: 12.5 };
+
+  const toggleCheck = (id) => {
+    setCheckedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleCheckAllOnPage = () => {
+    const pageIds = pageItems.map((p) => p.id);
+    const allChecked = pageIds.every((id) => checkedIds.has(id));
+    setCheckedIds((prev) => {
+      const next = new Set(prev);
+      pageIds.forEach((id) => (allChecked ? next.delete(id) : next.add(id)));
+      return next;
+    });
+  };
+
+  const handleDeleteSelected = async () => {
+    setDeletingSelected(false);
+    await deleteProducts([...checkedIds]);
+    setCheckedIds(new Set());
+  };
+
+  const checkedCount = checkedIds.size;
 
   const handleSave = async (product) => {
     setSaving(true);
@@ -60,8 +118,14 @@ export default function ProductsPage() {
           <Search size={15} style={{ position: "absolute", left: 12, top: 12, color: T.muted }} />
           <input style={{ ...inputStyle, paddingLeft: 36 }} placeholder="Pesquisar por nome..." value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
-        <div style={{ display: "flex", gap: 10 }}>
-          <Button variant="ghost" onClick={() => setBulkModalOpen(true)}><Percent size={15} /> Ajustar preços em massa</Button>
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          {checkedCount > 0 && (
+            <>
+              <span style={{ fontSize: 12.5, color: T.muted }}>{checkedCount} selecionado{checkedCount !== 1 ? "s" : ""}</span>
+              <Button variant="ghost" onClick={() => setDeletingSelected(true)} style={{ color: T.danger }}><Trash2 size={14} /> Eliminar selecionados</Button>
+            </>
+          )}
+          <Button variant="ghost" onClick={() => setBulkModalOpen(true)}><Percent size={15} /> Ajustar preços {checkedCount > 0 ? `(${checkedCount} selecionados)` : "em massa"}</Button>
           <Button onClick={() => setModalProduct(null)}><Plus size={15} /> Novo produto</Button>
         </div>
       </div>
@@ -72,8 +136,35 @@ export default function ProductsPage() {
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 900 }}>
           <thead>
             <tr style={{ background: T.bgRaised2, textAlign: "left" }}>
-              {["Produto", "Marca", "Referência", "EAN", "Preço (€)", "Preço promo (€)", "Stock", "Disponibilidade", "Estado", ""].map((h) => (
-                <th key={h} style={{ padding: "12px 14px", color: T.muted, fontWeight: 600, fontSize: 11, textTransform: "uppercase", letterSpacing: 0.4 }}>{h}</th>
+              <th style={{ padding: "12px 10px", width: 36 }}>
+                <button onClick={toggleCheckAllOnPage} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, display: "flex" }} title="Selecionar todos nesta página">
+                  {pageItems.length > 0 && pageItems.every((p) => checkedIds.has(p.id))
+                    ? <CheckSquare size={16} color={T.accent} />
+                    : <Square size={16} />}
+                </button>
+              </th>
+              {[
+                { label: "Produto", field: "name" },
+                { label: "Marca", field: "brand" },
+                { label: "Referência", field: null },
+                { label: "EAN", field: null },
+                { label: "Preço (€)", field: "price" },
+                { label: "Preço promo (€)", field: null },
+                { label: "Stock", field: "stock" },
+                { label: "Disponibilidade", field: null },
+                { label: "Estado", field: null },
+                { label: "", field: null },
+              ].map((h) => (
+                <th
+                  key={h.label || "acoes"}
+                  onClick={h.field ? () => toggleSort(h.field) : undefined}
+                  style={{ padding: "12px 14px", color: T.muted, fontWeight: 600, fontSize: 11, textTransform: "uppercase", letterSpacing: 0.4, cursor: h.field ? "pointer" : "default", userSelect: "none", whiteSpace: "nowrap" }}
+                >
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: sortField === h.field ? T.text : T.muted }}>
+                    {h.label}
+                    {h.field && <ArrowUpDown size={10} style={{ opacity: sortField === h.field ? 1 : 0.35, transform: sortField === h.field && sortDir === "asc" ? "scaleY(-1)" : "none" }} />}
+                  </span>
+                </th>
               ))}
             </tr>
           </thead>
@@ -82,6 +173,11 @@ export default function ProductsPage() {
               const stock = totalStock(p);
               return (
                 <tr key={p.id} style={{ borderTop: `1px solid ${T.border}` }}>
+                  <td style={{ padding: "10px 10px", textAlign: "center" }}>
+                    <button onClick={() => toggleCheck(p.id)} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, display: "flex", margin: "0 auto" }}>
+                      {checkedIds.has(p.id) ? <CheckSquare size={16} color={T.accent} /> : <Square size={16} />}
+                    </button>
+                  </td>
                   <td style={{ padding: "10px 14px" }}>
                     <button onClick={() => setModalProduct(p)} style={{ background: "none", border: "none", color: T.text, cursor: "pointer", fontWeight: 600, fontSize: 13, textAlign: "left", padding: 0 }}>
                       {p.name}
@@ -189,7 +285,7 @@ export default function ProductsPage() {
               );
             })}
             {pageItems.length === 0 && (
-              <tr><td colSpan={10} style={{ padding: 28, textAlign: "center", color: T.muted }}>Sem produtos encontrados.</td></tr>
+              <tr><td colSpan={11} style={{ padding: 28, textAlign: "center", color: T.muted }}>Sem produtos encontrados.</td></tr>
             )}
           </tbody>
         </table>
@@ -227,7 +323,8 @@ export default function ProductsPage() {
 
       {bulkModalOpen && (
         <BulkPriceModal
-          productCount={products.length}
+          productCount={checkedCount > 0 ? checkedCount : products.length}
+          productIds={checkedCount > 0 ? [...checkedIds] : null}
           onClose={() => setBulkModalOpen(false)}
           onApply={bulkAdjustPrices}
         />
@@ -250,6 +347,18 @@ export default function ProductsPage() {
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
               <Button variant="ghost" onClick={() => setDeleteId(null)}>Cancelar</Button>
               <Button variant="danger" onClick={async () => { await deleteProduct(deleteId); setDeleteId(null); }}>Eliminar</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deletingSelected && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200 }}>
+          <div style={{ background: T.bgRaised, border: `1px solid ${T.border}`, borderRadius: 12, padding: 24, width: 340 }}>
+            <p style={{ marginTop: 0, fontSize: 14 }}>Eliminar {checkedCount} produto{checkedCount !== 1 ? "s" : ""} selecionado{checkedCount !== 1 ? "s" : ""}, e todas as suas variantes? Esta ação não tem "desfazer".</p>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <Button variant="ghost" onClick={() => setDeletingSelected(false)}>Cancelar</Button>
+              <Button variant="danger" onClick={handleDeleteSelected}>Eliminar {checkedCount}</Button>
             </div>
           </div>
         </div>

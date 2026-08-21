@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { X, TrendingUp, TrendingDown } from "lucide-react";
 import { T, inputStyle, Field, Button } from "../lib/theme";
 
-export default function BulkPriceModal({ productCount, onClose, onApply }) {
+export default function BulkPriceModal({ productCount, productIds, onClose, onApply }) {
   const [type, setType] = useState("percent"); // 'percent' | 'fixed'
   const [direction, setDirection] = useState("increase"); // 'increase' | 'decrease'
   const [value, setValue] = useState("");
@@ -11,15 +11,17 @@ export default function BulkPriceModal({ productCount, onClose, onApply }) {
   const [applying, setApplying] = useState(false);
   const [done, setDone] = useState(null);
 
+  const scopeLabel = productIds && productIds.length > 0 ? `${productCount} produtos selecionados` : `todos os ${productCount} produtos`;
+
   const previewText = () => {
     if (!value) return "";
     const amount = type === "percent" ? `${value}%` : `€${value}`;
-    return `Isto vai ${direction === "increase" ? "aumentar" : "diminuir"} o preço de todos os ${productCount} produtos em ${amount}${includeCompareAt ? " (incluindo o preço riscado)" : ""}.`;
+    return `Isto vai ${direction === "increase" ? "aumentar" : "diminuir"} o preço de ${scopeLabel} em ${amount}${includeCompareAt ? " (incluindo o preço riscado)" : ""}.`;
   };
 
   const apply = async () => {
     setApplying(true);
-    const count = await onApply({ type, direction, value: parseFloat(value) || 0, includeCompareAt });
+    const count = await onApply({ type, direction, value: parseFloat(value) || 0, includeCompareAt, productIds });
     setApplying(false);
     setDone(count);
   };
@@ -98,7 +100,7 @@ export default function BulkPriceModal({ productCount, onClose, onApply }) {
               <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
                 <Button variant="ghost" onClick={() => setConfirming(false)}>Voltar</Button>
                 <Button variant="danger" onClick={apply} disabled={applying}>
-                  {applying ? "A aplicar..." : `Sim, aplicar a ${productCount} produtos`}
+                  {applying ? "A aplicar..." : `Sim, aplicar a ${scopeLabel}`}
                 </Button>
               </div>
             )}

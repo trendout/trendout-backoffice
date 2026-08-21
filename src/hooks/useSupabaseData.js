@@ -129,6 +129,11 @@ export function useProducts() {
     await load();
   };
 
+  const deleteProducts = async (ids) => {
+    await supabase.from("products").delete().in("id", ids);
+    await load();
+  };
+
   // Edição rápida de uma única coluna (usado na listagem: preço, EAN, disponibilidade...)
   const quickUpdate = async (id, patch) => {
     const columnMap = {
@@ -164,10 +169,11 @@ export function useProducts() {
   };
 
   // ajusta o preço de TODOS os produtos de uma vez — percentagem ou valor fixo, para cima ou para baixo
-  const bulkAdjustPrices = async ({ type, direction, value, includeCompareAt }) => {
+  const bulkAdjustPrices = async ({ type, direction, value, includeCompareAt, productIds }) => {
     const factor = direction === "decrease" ? -1 : 1;
+    const scope = productIds && productIds.length > 0 ? products.filter((p) => productIds.includes(p.id)) : products;
 
-    const updates = products.map((p) => {
+    const updates = scope.map((p) => {
       const newBase = type === "percent"
         ? +(p.basePrice * (1 + (factor * value) / 100)).toFixed(2)
         : +(p.basePrice + factor * value).toFixed(2);
@@ -198,7 +204,7 @@ export function useProducts() {
     return updates.length;
   };
 
-  return { products, loading, saveProduct, deleteProduct, quickUpdate, adjustVariantStock, bulkAdjustPrices, reload: load };
+  return { products, loading, saveProduct, deleteProduct, deleteProducts, quickUpdate, adjustVariantStock, bulkAdjustPrices, reload: load };
 }
 
 export function useOrders() {
