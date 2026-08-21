@@ -19,7 +19,8 @@ function isDueForContact(lastContactedAt) {
 export default function CustomersPage() {
   const { customers, loading, reload } = useCustomers();
   const [query, setQuery] = useState("");
-  const [sortOrder, setSortOrder] = useState("recent"); // 'recent' | 'oldest'
+  const [sortField, setSortField] = useState("activity"); // 'name' | 'email' | 'orders' | 'spent' | 'points' | 'activity'
+  const [sortDir, setSortDir] = useState("desc"); // 'asc' | 'desc'
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [importOpen, setImportOpen] = useState(false);
   const [campaignOpen, setCampaignOpen] = useState(false);
@@ -28,23 +29,45 @@ export default function CustomersPage() {
   const [pageSize, setPageSize] = useState(50);
   const [checkedEmails, setCheckedEmails] = useState(new Set());
 
+  const sortValue = (c, field) => {
+    switch (field) {
+      case "name": return (c.name || "").toLowerCase();
+      case "email": return c.email.toLowerCase();
+      case "orders": return c.orderCount || 0;
+      case "spent": return c.totalSpent || 0;
+      case "points": return c.pointsBalance || 0;
+      case "activity": return new Date(c.lastOrderDate || c.firstSeen).getTime();
+      default: return 0;
+    }
+  };
+
+  const toggleSort = (field) => {
+    if (sortField === field) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDir(field === "name" || field === "email" ? "asc" : "desc"); // texto começa A→Z, números começam do maior
+    }
+  };
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     let list = customers.filter((c) => !q || c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q));
 
     list = [...list].sort((a, b) => {
-      const dateA = new Date(a.lastOrderDate || a.firstSeen).getTime();
-      const dateB = new Date(b.lastOrderDate || b.firstSeen).getTime();
-      return sortOrder === "recent" ? dateB - dateA : dateA - dateB;
+      const va = sortValue(a, sortField);
+      const vb = sortValue(b, sortField);
+      const cmp = typeof va === "string" ? va.localeCompare(vb) : va - vb;
+      return sortDir === "asc" ? cmp : -cmp;
     });
 
     return list;
-  }, [customers, query, sortOrder]);
+  }, [customers, query, sortField, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const pageItems = filtered.slice((page - 1) * pageSize, page * pageSize);
 
-  useEffect(() => { setPage(1); }, [query, sortOrder, pageSize]);
+  useEffect(() => { setPage(1); }, [query, sortField, sortDir, pageSize]);
 
   if (loading) return <div style={{ color: T.muted, fontSize: 13.5 }}>A carregar clientes...</div>;
 
@@ -110,12 +133,6 @@ export default function CustomersPage() {
           <Search size={15} style={{ position: "absolute", left: 12, top: 12, color: T.muted }} />
           <input style={{ ...inputStyle, paddingLeft: 36 }} placeholder="Pesquisar por nome ou email..." value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
-        <button
-          onClick={() => setSortOrder(sortOrder === "recent" ? "oldest" : "recent")}
-          style={{ display: "flex", alignItems: "center", gap: 8, background: "none", border: `1px solid ${T.border}`, borderRadius: 8, color: T.text, padding: "10px 14px", cursor: "pointer", fontSize: 13 }}
-        >
-          <ArrowUpDown size={14} /> {sortOrder === "recent" ? "Mais recentes primeiro" : "Mais antigos primeiro"}
-        </button>
         <div style={{ display: "flex", gap: 10 }}>
           <Button variant="ghost" onClick={() => { setCampaignMode("broadcast"); setCampaignOpen(true); }}><Send size={14} /> Enviar campanha</Button>
           <Button variant="ghost" onClick={() => setImportOpen(true)}><Upload size={14} /> Importar newsletter</Button>
@@ -160,8 +177,34 @@ export default function CustomersPage() {
                     : <Square size={16} />}
                 </button>
               </th>
-              {["Cliente", "Email", "Telefone", "Conta", "Origem", "Encomendas", "Total gasto", "Pontos", "Newsletter", "Contacto", "Última atividade"].map((h) => (
-                <th key={h} style={{ padding: "12px 16px", color: T.muted, fontWeight: 600, fontSize: 11.5, textTransform: "uppercase", letterSpacing: 0.4 }}>{h}</th>
+              {[
+                { label: "Cliente", field: "name" },
+                { label: "Email", field: "email" },
+                { label: "Telefone", field: null },
+                { label: "Conta", field: null },
+                { label: "Origem", field: null },
+                { label: "Encomendas", field: "orders" },
+                { label: "Total gasto", field: "spent" },
+                { label: "Pontos", field: "points" },
+                { label: "Newsletter", field: null },
+                { label: "Contacto", field: null },
+                { label: "Última atividade", field: "activity" },
+              ].map((h) => (
+                <th
+                  key={h.label}
+                  onClick={h.field ? () => toggleSort(h.field) : undefined}
+                  style={{
+                    padding: "12px 16px", color: T.muted, fontWeight: 600, fontSize: 11.5, textTransform: "uppercase", letterSpacing: 0.4,
+                    cursor: h.field ? "pointer" : "default", userSelect: "none", whiteSpace: "nowrap",
+                  }}
+                >
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: sortField === h.field ? T.text : T.muted }}>
+                    {h.label}
+                    {h.field && (
+                      <ArrowUpDown size={11} style={{ opacity: sortField === h.field ? 1 : 0.35, transform: sortField === h.field && sortDir === "asc" ? "scaleY(-1)" : "none" }} />
+                    )}
+                  </span>
+                </th>
               ))}
             </tr>
           </thead>
