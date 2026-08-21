@@ -58,6 +58,11 @@ export function useCoupons() {
     await load();
   };
 
+  const deleteCoupons = async (ids) => {
+    await supabase.from("coupons").delete().in("id", ids);
+    await load();
+  };
+
   // procura a conta do cliente pelo email, e liga-a ao cupão como "dono" (influenciador)
   const assignInfluencer = async (couponId, email, commissionRate) => {
     if (!email.trim()) {
@@ -77,5 +82,5 @@ export function useCoupons() {
     await load();
   };
 
-  return { coupons, loading, addCoupon, toggleCoupon, deleteCoupon, assignInfluencer, reload: load };
+  return { coupons, loading, addCoupon, toggleCoupon, deleteCoupon, deleteCoupons, assignInfluencer, reload: load };
 }

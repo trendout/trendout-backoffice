@@ -1,12 +1,12 @@
 import React, { useState } from "react";
-import { Plus, Trash2, X, Users, UserCog, Wallet, Check } from "lucide-react";
+import { Plus, Trash2, X, Users, UserCog, Wallet, Check, ArrowUpDown, CheckSquare, Square } from "lucide-react";
 import { T, inputStyle, Field, Button } from "../lib/theme";
 import { useCoupons } from "../hooks/useCoupons";
 import { useCouponUsage } from "../hooks/useCouponUsage";
 import { useCommissions } from "../hooks/useCommissions";
 
 export default function CouponsPage() {
-  const { coupons, loading, addCoupon, toggleCoupon, deleteCoupon, assignInfluencer } = useCoupons();
+  const { coupons, loading, addCoupon, toggleCoupon, deleteCoupon, deleteCoupons, assignInfluencer } = useCoupons();
   const { usageByCode, loading: usageLoading } = useCouponUsage();
   const { byCoupon: commissionsByCode, loading: commissionsLoading, markPaid } = useCommissions();
   const [modalOpen, setModalOpen] = useState(false);
@@ -14,8 +14,53 @@ export default function CouponsPage() {
   const [influencerModalCoupon, setInfluencerModalCoupon] = useState(null);
   const [form, setForm] = useState({ code: "", type: "percent", value: "" });
   const [errorMsg, setErrorMsg] = useState("");
+  const [sortField, setSortField] = useState(null); // null = ordem natural | 'code' | 'value' | 'usage'
+  const [sortDir, setSortDir] = useState("asc");
+  const [checkedIds, setCheckedIds] = useState(new Set());
+  const [deletingSelected, setDeletingSelected] = useState(false);
 
   if (loading) return <div style={{ color: T.muted, fontSize: 13.5 }}>A carregar cupões...</div>;
+
+  const toggleCheck = (id) => {
+    setCheckedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleCheckAll = () => {
+    const allIds = sortedCoupons.map((c) => c.id);
+    const allChecked = allIds.every((id) => checkedIds.has(id));
+    setCheckedIds(allChecked ? new Set() : new Set(allIds));
+  };
+
+  const checkedCount = checkedIds.size;
+
+  const handleDeleteSelected = async () => {
+    setDeletingSelected(false);
+    await deleteCoupons([...checkedIds]);
+    setCheckedIds(new Set());
+  };
+
+  const toggleSort = (field) => {
+    if (sortField === field) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDir(field === "code" ? "asc" : "desc");
+    }
+  };
+
+  let sortedCoupons = coupons;
+  if (sortField) {
+    sortedCoupons = [...coupons].sort((a, b) => {
+      const va = sortField === "code" ? a.code.toLowerCase() : sortField === "value" ? a.value : (usageByCode[a.code]?.length || 0);
+      const vb = sortField === "code" ? b.code.toLowerCase() : sortField === "value" ? b.value : (usageByCode[b.code]?.length || 0);
+      const cmp = typeof va === "string" ? va.localeCompare(vb) : va - vb;
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+  }
 
   const submit = async () => {
     if (!form.code.trim() || !form.value) return;
@@ -50,7 +95,13 @@ export default function CouponsPage() {
         </div>
       )}
 
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 20 }}>
+      <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 10, marginBottom: 20 }}>
+        {checkedCount > 0 && (
+          <>
+            <span style={{ fontSize: 12.5, color: T.muted }}>{checkedCount} selecionado{checkedCount !== 1 ? "s" : ""}</span>
+            <Button variant="ghost" onClick={() => setDeletingSelected(true)} style={{ color: T.danger }}><Trash2 size={14} /> Eliminar selecionados</Button>
+          </>
+        )}
         <Button onClick={() => setModalOpen(true)}><Plus size={15} /> Novo cupão</Button>
       </div>
 
@@ -58,14 +109,43 @@ export default function CouponsPage() {
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13.5 }}>
           <thead>
             <tr style={{ background: T.bgRaised2, textAlign: "left" }}>
-              {["Código", "Tipo", "Valor", "Estado", "Utilizações", "Influenciador", ""].map((h) => (
-                <th key={h} style={{ padding: "12px 16px", color: T.muted, fontWeight: 600, fontSize: 11.5, textTransform: "uppercase", letterSpacing: 0.4 }}>{h}</th>
+              <th style={{ padding: "12px 10px", width: 36 }}>
+                <button onClick={toggleCheckAll} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, display: "flex" }} title="Selecionar todos">
+                  {sortedCoupons.length > 0 && sortedCoupons.every((c) => checkedIds.has(c.id))
+                    ? <CheckSquare size={16} color={T.accent} />
+                    : <Square size={16} />}
+                </button>
+              </th>
+              {[
+                { label: "Código", field: "code" },
+                { label: "Tipo", field: null },
+                { label: "Valor", field: "value" },
+                { label: "Estado", field: null },
+                { label: "Utilizações", field: "usage" },
+                { label: "Influenciador", field: null },
+                { label: "", field: null },
+              ].map((h) => (
+                <th
+                  key={h.label || "acoes"}
+                  onClick={h.field ? () => toggleSort(h.field) : undefined}
+                  style={{ padding: "12px 16px", color: T.muted, fontWeight: 600, fontSize: 11.5, textTransform: "uppercase", letterSpacing: 0.4, cursor: h.field ? "pointer" : "default", userSelect: "none" }}
+                >
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: sortField === h.field ? T.text : T.muted }}>
+                    {h.label}
+                    {h.field && <ArrowUpDown size={11} style={{ opacity: sortField === h.field ? 1 : 0.35, transform: sortField === h.field && sortDir === "asc" ? "scaleY(-1)" : "none" }} />}
+                  </span>
+                </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {coupons.map((d) => (
+            {sortedCoupons.map((d) => (
               <tr key={d.id} style={{ borderTop: `1px solid ${T.border}` }}>
+                <td style={{ padding: "12px 10px", textAlign: "center" }}>
+                  <button onClick={() => toggleCheck(d.id)} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, display: "flex", margin: "0 auto" }}>
+                    {checkedIds.has(d.id) ? <CheckSquare size={16} color={T.accent} /> : <Square size={16} />}
+                  </button>
+                </td>
                 <td style={{ padding: "12px 16px", fontWeight: 700, letterSpacing: 0.5 }}>{d.code}</td>
                 <td style={{ padding: "12px 16px", color: T.muted }}>{d.type === "percent" ? "Percentagem" : "Valor fixo"}</td>
                 <td style={{ padding: "12px 16px" }}>{d.type === "percent" ? `${d.value}%` : `€${d.value.toFixed(2)}`}</td>
@@ -105,7 +185,7 @@ export default function CouponsPage() {
               </tr>
             ))}
             {coupons.length === 0 && (
-              <tr><td colSpan={7} style={{ padding: 28, textAlign: "center", color: T.muted }}>Sem cupões criados.</td></tr>
+              <tr><td colSpan={8} style={{ padding: 28, textAlign: "center", color: T.muted }}>Sem cupões criados.</td></tr>
             )}
           </tbody>
         </table>
@@ -159,6 +239,18 @@ export default function CouponsPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deletingSelected && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200 }}>
+          <div style={{ background: T.bgRaised, border: `1px solid ${T.border}`, borderRadius: 12, padding: 24, width: 340 }}>
+            <p style={{ marginTop: 0, fontSize: 14 }}>Eliminar {checkedCount} cupão{checkedCount !== 1 ? "ões" : ""} selecionado{checkedCount !== 1 ? "s" : ""}? Esta ação não tem "desfazer".</p>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <Button variant="ghost" onClick={() => setDeletingSelected(false)}>Cancelar</Button>
+              <Button variant="danger" onClick={handleDeleteSelected}>Eliminar {checkedCount}</Button>
             </div>
           </div>
         </div>
