@@ -31,6 +31,7 @@ export function useRealAnalytics(rangeKey) {
   const [products, setProducts] = useState([]);
   const [cartAdds, setCartAdds] = useState([]);
   const [carts, setCarts] = useState([]);
+  const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -40,17 +41,18 @@ export function useRealAnalytics(rangeKey) {
       setLoading(true);
       const start = startDateFor(rangeKey).toISOString();
 
-      const [{ data: pv }, { data: ord }, { data: items }, { data: searches }, { data: prods }, { data: cartAdds }, { data: carts }] = await Promise.all([
-        supabase.from("page_views").select("path, referrer, created_at").gte("created_at", start),
-        supabase.from("orders").select("total, payment_status, payment_method, shipping_country, customer_name, customer_email, created_at").gte("created_at", start),
+      const [{ data: pv }, { data: ord }, { data: items }, { data: searches }, { data: prods }, { data: cartAdds }, { data: carts }, { data: favs }] = await Promise.all([
+        supabase.from("page_views").select("path, session_id, referrer, created_at").gte("created_at", start),
+        supabase.from("orders").select("total, payment_status, payment_method, shipping_country, customer_name, customer_email, landing_referrer, created_at").gte("created_at", start),
         supabase.from("order_items")
           .select("product_id, product_name, quantity, unit_price, orders!inner(created_at, payment_status)")
           .eq("orders.payment_status", "paid")
           .gte("orders.created_at", start),
         supabase.from("search_queries").select("query, created_at").gte("created_at", start),
-        supabase.from("products").select("slug, name"),
+        supabase.from("products").select("id, slug, name"),
         supabase.from("cart_add_events").select("product_id, product_name, quantity, created_at").gte("created_at", start),
         supabase.from("cart_snapshots").select("id, updated_at").gte("updated_at", start),
+        supabase.from("favorites").select("product_id, created_at").gte("created_at", start),
       ]);
 
       if (cancelled) return;
@@ -61,6 +63,7 @@ export function useRealAnalytics(rangeKey) {
       setProducts(prods || []);
       setCartAdds(cartAdds || []);
       setCarts(carts || []);
+      setFavorites(favs || []);
       setLoading(false);
     }
 
@@ -247,6 +250,53 @@ export function useRealAnalytics(rangeKey) {
     .sort((a, b) => b[1].total - a[1].total)
     .map(([country, v]) => ({ country, ...v }));
 
+  // produtos mais guardados como favoritos no período
+  const idToName = Object.fromEntries(products.map((p) => [p.id, p.name]));
+  const mostFavoritedMap = {};
+  favorites.forEach((f) => {
+    mostFavoritedMap[f.product_id] = (mostFavoritedMap[f.product_id] || 0) + 1;
+  });
+  const mostFavorited = Object.entries(mostFavoritedMap)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([productId, count]) => ({ name: idToName[productId] || "(produto removido)", count }));
+
+  // taxa de conversão por origem de tráfego — sessões únicas de cada origem,
+  // vs. encomendas cuja sessão de chegada foi identificada com essa origem
+  // (só disponível para encomendas feitas depois desta funcionalidade existir)
+  const sessionsBySource = {};
+  const seenSessions = new Set();
+  pageViews.forEach((v) => {
+    const sessionKey = v.session_id;
+    if (!sessionKey || seenSessions.has(sessionKey)) return;
+    seenSessions.add(sessionKey);
+    const label = referrerLabel(v.referrer);
+    sessionsBySource[label] = (sessionsBySource[label] || 0) + 1;
+  });
+  const ordersBySource = {};
+  orders.forEach((o) => {
+    if (!o.landing_referrer) return;
+    ordersBySource[o.landing_referrer] = (ordersBySource[o.landing_referrer] || 0) + 1;
+  });
+  const conversionBySource = Object.entries(sessionsBySource)
+    .map(([label, sessions]) => ({
+      label,
+      sessions,
+      orders: ordersBySource[label] || 0,
+      rate: sessions > 0 ? ((ordersBySource[label] || 0) / sessions) * 100 : 0,
+    }))
+    .sort((a, b) => b.sessions - a.sessions)
+    .slice(0, 8);
+
+  // funil: visitas (sessões únicas) → carrinho → checkout iniciado → compra concluída
+  const funnelVisitors = seenSessions.size;
+  const funnel = [
+    { label: "Visitantes", value: funnelVisitors },
+    { label: "Carrinho", value: carts.length },
+    { label: "Checkout iniciado", value: totalOrders },
+    { label: "Compra concluída", value: paidOrders.length },
+  ];
+
   return {
     loading,
     series: loading ? [] : bucketed(),
@@ -265,5 +315,8 @@ export function useRealAnalytics(rangeKey) {
     topCustomers,
     salesByPaymentMethod,
     salesByCountry,
+    mostFavorited,
+    conversionBySource,
+    funnel,
   };
 }

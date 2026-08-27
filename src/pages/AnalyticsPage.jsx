@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Calendar, TrendingUp, ShoppingBag, BarChart3, Link as LinkIcon, Eye, Award, Search, ShoppingCart, Percent, CreditCard, Globe2, UserCircle2 } from "lucide-react";
+import { Calendar, TrendingUp, ShoppingBag, BarChart3, Link as LinkIcon, Eye, Award, Search, ShoppingCart, Percent, CreditCard, Globe2, UserCircle2, Heart, Filter } from "lucide-react";
 import {
   ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
@@ -29,7 +29,7 @@ function StatCard({ label, value, icon: Icon, accent }) {
 
 export default function AnalyticsPage() {
   const [range, setRange] = useState("30d");
-  const { loading, series, totalVisits, totalOrders, totalRevenue, conversion, averageOrderValue, cartAbandonmentRate, topPages, topReferrers, topProducts, bestSellers, topSearches, mostAddedToCart, topCustomers, salesByPaymentMethod, salesByCountry } = useRealAnalytics(range);
+  const { loading, series, totalVisits, totalOrders, totalRevenue, conversion, averageOrderValue, cartAbandonmentRate, topPages, topReferrers, topProducts, bestSellers, topSearches, mostAddedToCart, topCustomers, salesByPaymentMethod, salesByCountry, mostFavorited, conversionBySource, funnel } = useRealAnalytics(range);
 
   return (
     <div>
@@ -83,6 +83,30 @@ export default function AnalyticsPage() {
                   <Line yAxisId="left" type="monotone" dataKey="visits" name="Visitas" stroke="#c9ff3f" strokeWidth={2} dot={false} />
                 </ComposedChart>
               </ResponsiveContainer>
+            )}
+          </div>
+
+          <div style={{ background: T.bgRaised, border: `1px solid ${T.border}`, borderRadius: 12, padding: 20, marginBottom: 16 }}>
+            <div style={{ fontSize: 11.5, color: T.muted, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 16 }}>Funil — do visitante à compra</div>
+            {funnel[0].value === 0 ? (
+              <div style={{ color: T.muted, fontSize: 13, textAlign: "center", padding: "20px 0" }}>Sem dados ainda neste período.</div>
+            ) : (
+              <div style={{ display: "flex", gap: 4 }}>
+                {funnel.map((stage, i) => {
+                  const pctOfFirst = funnel[0].value > 0 ? (stage.value / funnel[0].value) * 100 : 0;
+                  const pctOfPrev = i > 0 && funnel[i - 1].value > 0 ? (stage.value / funnel[i - 1].value) * 100 : 100;
+                  return (
+                    <div key={stage.label} style={{ flex: 1, textAlign: "center" }}>
+                      <div style={{ height: 90, display: "flex", alignItems: "flex-end", justifyContent: "center", marginBottom: 10 }}>
+                        <div style={{ width: "70%", height: `${Math.max(6, pctOfFirst)}%`, background: i === funnel.length - 1 ? T.accent : T.accentDim, borderRadius: "6px 6px 0 0" }} />
+                      </div>
+                      <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22 }}>{stage.value.toLocaleString("pt-PT")}</div>
+                      <div style={{ fontSize: 11.5, color: T.muted, marginTop: 2 }}>{stage.label}</div>
+                      {i > 0 && <div style={{ fontSize: 10.5, color: T.muted, marginTop: 2 }}>{pctOfPrev.toFixed(0)}% da etapa anterior</div>}
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
 
@@ -240,6 +264,45 @@ export default function AnalyticsPage() {
                     <span style={{ color: T.muted, flexShrink: 0 }}>€{c.total.toFixed(2)}</span>
                   </div>
                 ))
+              )}
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 16 }}>
+            <div style={{ background: T.bgRaised, border: `1px solid ${T.border}`, borderRadius: 12, padding: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: T.muted, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 14 }}>
+                <Heart size={12} /> Mais guardados como favoritos
+              </div>
+              {mostFavorited.length === 0 ? (
+                <div style={{ color: T.muted, fontSize: 13 }}>Sem favoritos guardados ainda neste período.</div>
+              ) : (
+                mostFavorited.map((f, i) => (
+                  <div key={f.name + i} style={{ display: "flex", justifyContent: "space-between", gap: 10, padding: "8px 0", borderTop: i > 0 ? `1px solid ${T.border}` : "none", fontSize: 13 }}>
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</span>
+                    <span style={{ color: T.muted, flexShrink: 0 }}>{f.count}×</span>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div style={{ background: T.bgRaised, border: `1px solid ${T.border}`, borderRadius: 12, padding: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: T.muted, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 14 }}>
+                <Filter size={12} /> Conversão por origem de tráfego
+              </div>
+              {conversionBySource.length === 0 ? (
+                <div style={{ color: T.muted, fontSize: 13 }}>Sem dados ainda.</div>
+              ) : (
+                <>
+                  {conversionBySource.map((s, i) => (
+                    <div key={s.label} style={{ display: "flex", justifyContent: "space-between", gap: 10, padding: "8px 0", borderTop: i > 0 ? `1px solid ${T.border}` : "none", fontSize: 13 }}>
+                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.label}</span>
+                      <span style={{ color: T.muted, flexShrink: 0 }}>{s.sessions} visitas · {s.orders} compras · {s.rate.toFixed(1)}%</span>
+                    </div>
+                  ))}
+                  <p style={{ fontSize: 11, color: T.muted, margin: "12px 0 0", lineHeight: 1.5 }}>
+                    As compras só contam a partir de agora — encomendas feitas antes desta funcionalidade não têm origem identificada.
+                  </p>
+                </>
               )}
             </div>
           </div>
