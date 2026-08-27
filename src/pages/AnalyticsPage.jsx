@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Calendar, TrendingUp, ShoppingBag, BarChart3, Link as LinkIcon } from "lucide-react";
+import { Calendar, TrendingUp, ShoppingBag, BarChart3, Link as LinkIcon, Eye, Award, Search, ShoppingCart } from "lucide-react";
 import {
   ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
@@ -29,7 +29,7 @@ function StatCard({ label, value, icon: Icon, accent }) {
 
 export default function AnalyticsPage() {
   const [range, setRange] = useState("30d");
-  const { loading, series, totalVisits, totalOrders, totalRevenue, conversion, topPages, topReferrers } = useRealAnalytics(range);
+  const { loading, series, totalVisits, totalOrders, totalRevenue, conversion, topPages, topReferrers, topProducts, bestSellers, topSearches, mostAddedToCart } = useRealAnalytics(range);
 
   return (
     <div>
@@ -115,6 +115,72 @@ export default function AnalyticsPage() {
                   <div key={p.path} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderTop: `1px solid ${T.border}`, fontSize: 13 }}>
                     <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 220 }}>{p.path}</span>
                     <span style={{ color: T.muted }}>{p.views.toLocaleString("pt-PT")} visitas</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16, marginTop: 16 }}>
+            <div style={{ background: T.bgRaised, border: `1px solid ${T.border}`, borderRadius: 12, padding: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: T.muted, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 14 }}>
+                <Eye size={12} /> Produtos mais visitados
+              </div>
+              {topProducts.length === 0 ? (
+                <div style={{ color: T.muted, fontSize: 13 }}>Sem dados ainda.</div>
+              ) : (
+                topProducts.map((p, i) => (
+                  <div key={p.slug} style={{ display: "flex", justifyContent: "space-between", gap: 10, padding: "8px 0", borderTop: i > 0 ? `1px solid ${T.border}` : "none", fontSize: 13 }}>
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
+                    <span style={{ color: T.muted, flexShrink: 0 }}>{p.views.toLocaleString("pt-PT")} visitas</span>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div style={{ background: T.bgRaised, border: `1px solid ${T.border}`, borderRadius: 12, padding: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: T.muted, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 14 }}>
+                <ShoppingCart size={12} /> Mais adicionados ao carrinho
+              </div>
+              {mostAddedToCart.length === 0 ? (
+                <div style={{ color: T.muted, fontSize: 13 }}>Sem dados ainda.</div>
+              ) : (
+                mostAddedToCart.map((p, i) => (
+                  <div key={p.name + i} style={{ display: "flex", justifyContent: "space-between", gap: 10, padding: "8px 0", borderTop: i > 0 ? `1px solid ${T.border}` : "none", fontSize: 13 }}>
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
+                    <span style={{ color: T.muted, flexShrink: 0 }}>{p.count}×</span>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div style={{ background: T.bgRaised, border: `1px solid ${T.border}`, borderRadius: 12, padding: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: T.muted, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 14 }}>
+                <Award size={12} /> Produtos mais vendidos
+              </div>
+              {bestSellers.length === 0 ? (
+                <div style={{ color: T.muted, fontSize: 13 }}>Sem vendas pagas ainda neste período.</div>
+              ) : (
+                bestSellers.map((p, i) => (
+                  <div key={p.name + i} style={{ display: "flex", justifyContent: "space-between", gap: 10, padding: "8px 0", borderTop: i > 0 ? `1px solid ${T.border}` : "none", fontSize: 13 }}>
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
+                    <span style={{ color: T.muted, flexShrink: 0 }}>{p.qty} vendido{p.qty !== 1 ? "s" : ""}</span>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div style={{ background: T.bgRaised, border: `1px solid ${T.border}`, borderRadius: 12, padding: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: T.muted, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 14 }}>
+                <Search size={12} /> Mais pesquisado na loja
+              </div>
+              {topSearches.length === 0 ? (
+                <div style={{ color: T.muted, fontSize: 13 }}>Sem pesquisas registadas ainda.</div>
+              ) : (
+                topSearches.map((s, i) => (
+                  <div key={s.query} style={{ display: "flex", justifyContent: "space-between", gap: 10, padding: "8px 0", borderTop: i > 0 ? `1px solid ${T.border}` : "none", fontSize: 13 }}>
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>"{s.query}"</span>
+                    <span style={{ color: T.muted, flexShrink: 0 }}>{s.count}×</span>
                   </div>
                 ))
               )}

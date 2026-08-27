@@ -26,6 +26,10 @@ function referrerLabel(ref) {
 export function useRealAnalytics(rangeKey) {
   const [pageViews, setPageViews] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [soldItems, setSoldItems] = useState([]);
+  const [searchQueries, setSearchQueries] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [cartAdds, setCartAdds] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -35,14 +39,25 @@ export function useRealAnalytics(rangeKey) {
       setLoading(true);
       const start = startDateFor(rangeKey).toISOString();
 
-      const [{ data: pv }, { data: ord }] = await Promise.all([
+      const [{ data: pv }, { data: ord }, { data: items }, { data: searches }, { data: prods }, { data: cartAdds }] = await Promise.all([
         supabase.from("page_views").select("path, referrer, created_at").gte("created_at", start),
         supabase.from("orders").select("total, payment_status, created_at").gte("created_at", start),
+        supabase.from("order_items")
+          .select("product_id, product_name, quantity, unit_price, orders!inner(created_at, payment_status)")
+          .eq("orders.payment_status", "paid")
+          .gte("orders.created_at", start),
+        supabase.from("search_queries").select("query, created_at").gte("created_at", start),
+        supabase.from("products").select("slug, name"),
+        supabase.from("cart_add_events").select("product_id, product_name, quantity, created_at").gte("created_at", start),
       ]);
 
       if (cancelled) return;
       setPageViews(pv || []);
       setOrders(ord || []);
+      setSoldItems(items || []);
+      setSearchQueries(searches || []);
+      setProducts(prods || []);
+      setCartAdds(cartAdds || []);
       setLoading(false);
     }
 
@@ -131,6 +146,57 @@ export function useRealAnalytics(rangeKey) {
     .slice(0, 6)
     .map(([label, count]) => ({ label, count }));
 
+  // produtos mais visitados — cruza os caminhos /produto/<slug> das visitas com o nome real do produto
+  const slugToName = Object.fromEntries(products.map((p) => [p.slug, p.name]));
+  const topProducts = Object.entries(
+    pageViews.reduce((acc, v) => {
+      const match = v.path.match(/^\/produto\/([^/?#]+)/);
+      if (!match) return acc;
+      const slug = match[1];
+      acc[slug] = (acc[slug] || 0) + 1;
+      return acc;
+    }, {})
+  )
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([slug, views]) => ({ slug, name: slugToName[slug] || slug, views }));
+
+  // produtos mais vendidos — quantidade real, só de encomendas pagas
+  const bestSellersMap = {};
+  soldItems.forEach((it) => {
+    const key = it.product_id || it.product_name;
+    if (!bestSellersMap[key]) bestSellersMap[key] = { name: it.product_name, qty: 0, revenue: 0 };
+    bestSellersMap[key].qty += it.quantity;
+    bestSellersMap[key].revenue += it.quantity * (it.unit_price || 0);
+  });
+  const bestSellers = Object.values(bestSellersMap)
+    .sort((a, b) => b.qty - a.qty)
+    .slice(0, 10);
+
+  // termos mais pesquisados na loja — agrupados sem distinguir maiúsculas/minúsculas
+  const topSearches = Object.entries(
+    searchQueries.reduce((acc, s) => {
+      const key = s.query.trim().toLowerCase();
+      if (!key) return acc;
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {})
+  )
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([query, count]) => ({ query, count }));
+
+  // produtos mais adicionados ao carrinho — inclui os que nunca chegaram a ser comprados
+  const mostAddedMap = {};
+  cartAdds.forEach((c) => {
+    const key = c.product_id || c.product_name;
+    if (!mostAddedMap[key]) mostAddedMap[key] = { name: c.product_name, count: 0 };
+    mostAddedMap[key].count += c.quantity;
+  });
+  const mostAddedToCart = Object.values(mostAddedMap)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+
   return {
     loading,
     series: loading ? [] : bucketed(),
@@ -140,5 +206,9 @@ export function useRealAnalytics(rangeKey) {
     conversion,
     topPages,
     topReferrers,
+    topProducts,
+    bestSellers,
+    topSearches,
+    mostAddedToCart,
   };
 }
