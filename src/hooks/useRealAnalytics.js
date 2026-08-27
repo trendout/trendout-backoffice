@@ -30,6 +30,7 @@ export function useRealAnalytics(rangeKey) {
   const [searchQueries, setSearchQueries] = useState([]);
   const [products, setProducts] = useState([]);
   const [cartAdds, setCartAdds] = useState([]);
+  const [carts, setCarts] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -39,9 +40,9 @@ export function useRealAnalytics(rangeKey) {
       setLoading(true);
       const start = startDateFor(rangeKey).toISOString();
 
-      const [{ data: pv }, { data: ord }, { data: items }, { data: searches }, { data: prods }, { data: cartAdds }] = await Promise.all([
+      const [{ data: pv }, { data: ord }, { data: items }, { data: searches }, { data: prods }, { data: cartAdds }, { data: carts }] = await Promise.all([
         supabase.from("page_views").select("path, referrer, created_at").gte("created_at", start),
-        supabase.from("orders").select("total, payment_status, created_at").gte("created_at", start),
+        supabase.from("orders").select("total, payment_status, payment_method, shipping_country, customer_name, customer_email, created_at").gte("created_at", start),
         supabase.from("order_items")
           .select("product_id, product_name, quantity, unit_price, orders!inner(created_at, payment_status)")
           .eq("orders.payment_status", "paid")
@@ -49,6 +50,7 @@ export function useRealAnalytics(rangeKey) {
         supabase.from("search_queries").select("query, created_at").gte("created_at", start),
         supabase.from("products").select("slug, name"),
         supabase.from("cart_add_events").select("product_id, product_name, quantity, created_at").gte("created_at", start),
+        supabase.from("cart_snapshots").select("id, updated_at").gte("updated_at", start),
       ]);
 
       if (cancelled) return;
@@ -58,6 +60,7 @@ export function useRealAnalytics(rangeKey) {
       setSearchQueries(searches || []);
       setProducts(prods || []);
       setCartAdds(cartAdds || []);
+      setCarts(carts || []);
       setLoading(false);
     }
 
@@ -122,8 +125,10 @@ export function useRealAnalytics(rangeKey) {
 
   const totalVisits = pageViews.length;
   const totalOrders = orders.length;
-  const totalRevenue = orders.filter((o) => o.payment_status === "paid").reduce((s, o) => s + Number(o.total), 0);
+  const paidOrders = orders.filter((o) => o.payment_status === "paid");
+  const totalRevenue = paidOrders.reduce((s, o) => s + Number(o.total), 0);
   const conversion = totalVisits > 0 ? (totalOrders / totalVisits) * 100 : 0;
+  const averageOrderValue = paidOrders.length > 0 ? totalRevenue / paidOrders.length : 0;
 
   const topPages = Object.entries(
     pageViews.reduce((acc, v) => {
@@ -197,6 +202,51 @@ export function useRealAnalytics(rangeKey) {
     .sort((a, b) => b.count - a.count)
     .slice(0, 10);
 
+  // taxa de abandono de carrinho — carrinhos guardados no período vs. encomendas pagas concluídas
+  const cartAbandonmentRate = carts.length > 0
+    ? Math.max(0, (1 - paidOrders.length / carts.length) * 100)
+    : 0;
+
+  // clientes que mais gastaram no período (só encomendas pagas)
+  const topCustomersMap = {};
+  paidOrders.forEach((o) => {
+    const key = o.customer_email;
+    if (!key) return;
+    if (!topCustomersMap[key]) topCustomersMap[key] = { name: o.customer_name || key, email: key, total: 0, orders: 0 };
+    topCustomersMap[key].total += Number(o.total);
+    topCustomersMap[key].orders += 1;
+  });
+  const topCustomers = Object.values(topCustomersMap)
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 10);
+
+  // vendas por método de pagamento (só pagas)
+  const paymentMethodLabels = { card: "Cartão", mbway: "MB WAY", bank_transfer: "Transferência" };
+  const salesByPaymentMethod = Object.entries(
+    paidOrders.reduce((acc, o) => {
+      const key = o.payment_method || "outro";
+      if (!acc[key]) acc[key] = { total: 0, count: 0 };
+      acc[key].total += Number(o.total);
+      acc[key].count += 1;
+      return acc;
+    }, {})
+  )
+    .sort((a, b) => b[1].total - a[1].total)
+    .map(([method, v]) => ({ label: paymentMethodLabels[method] || method, ...v }));
+
+  // vendas por país de entrega (só pagas)
+  const salesByCountry = Object.entries(
+    paidOrders.reduce((acc, o) => {
+      const key = o.shipping_country || "—";
+      if (!acc[key]) acc[key] = { total: 0, count: 0 };
+      acc[key].total += Number(o.total);
+      acc[key].count += 1;
+      return acc;
+    }, {})
+  )
+    .sort((a, b) => b[1].total - a[1].total)
+    .map(([country, v]) => ({ country, ...v }));
+
   return {
     loading,
     series: loading ? [] : bucketed(),
@@ -204,11 +254,16 @@ export function useRealAnalytics(rangeKey) {
     totalOrders,
     totalRevenue,
     conversion,
+    averageOrderValue,
+    cartAbandonmentRate,
     topPages,
     topReferrers,
     topProducts,
     bestSellers,
     topSearches,
     mostAddedToCart,
+    topCustomers,
+    salesByPaymentMethod,
+    salesByCountry,
   };
 }
