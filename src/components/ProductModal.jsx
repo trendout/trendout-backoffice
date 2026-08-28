@@ -122,10 +122,10 @@ export default function ProductModal({ product, categories, onClose, onSave }) {
           <Field label="Preço (€)">
             <input style={inputStyle} type="number" step="0.01" value={form.basePrice} onChange={(e) => update("basePrice", e.target.value)} placeholder="24.90" />
           </Field>
-          <Field label="Preço riscado (€, opcional)">
+          <Field label="Preço riscado">
             <input style={inputStyle} type="number" step="0.01" value={form.compareAtPrice} onChange={(e) => update("compareAtPrice", e.target.value)} placeholder="29.90" />
           </Field>
-          <Field label="Custo do produto (€, opcional)">
+          <Field label="Custo do produto">
             <input style={inputStyle} type="number" step="0.01" value={form.costPrice || ""} onChange={(e) => update("costPrice", e.target.value)} placeholder="9.50" />
           </Field>
           <Field label="Cupão em destaque">
