@@ -49,7 +49,7 @@ export function useRealAnalytics(rangeKey) {
           .eq("orders.payment_status", "paid")
           .gte("orders.created_at", start),
         supabase.from("search_queries").select("query, created_at").gte("created_at", start),
-        supabase.from("products").select("id, slug, name"),
+        supabase.from("products").select("id, slug, name, cost_price"),
         supabase.from("cart_add_events").select("product_id, product_name, quantity, created_at").gte("created_at", start),
         supabase.from("cart_snapshots").select("id, updated_at").gte("updated_at", start),
         supabase.from("favorites").select("product_id, created_at").gte("created_at", start),
@@ -179,6 +179,39 @@ export function useRealAnalytics(rangeKey) {
   });
   const bestSellers = Object.values(bestSellersMap)
     .sort((a, b) => b.qty - a.qty)
+    .slice(0, 10);
+
+  // lucro real — receita menos custo, só para produtos com custo definido.
+  // itens sem custo preenchido ficam de fora do lucro (não sabemos o custo deles),
+  // mas contam à parte para sabermos quanta receita ainda não tem custo associado.
+  const costByProductId = Object.fromEntries(products.map((p) => [p.id, p.cost_price]));
+  let totalCost = 0;
+  let revenueWithKnownCost = 0;
+  let revenueWithoutCost = 0;
+  const profitByProduct = {};
+
+  soldItems.forEach((it) => {
+    const cost = it.product_id != null ? costByProductId[it.product_id] : null;
+    const lineRevenue = it.quantity * (it.unit_price || 0);
+    if (cost != null) {
+      const lineCost = it.quantity * Number(cost);
+      totalCost += lineCost;
+      revenueWithKnownCost += lineRevenue;
+
+      const key = it.product_id;
+      if (!profitByProduct[key]) profitByProduct[key] = { name: it.product_name, revenue: 0, cost: 0 };
+      profitByProduct[key].revenue += lineRevenue;
+      profitByProduct[key].cost += lineCost;
+    } else {
+      revenueWithoutCost += lineRevenue;
+    }
+  });
+
+  const totalProfit = revenueWithKnownCost - totalCost;
+  const profitMargin = revenueWithKnownCost > 0 ? (totalProfit / revenueWithKnownCost) * 100 : 0;
+  const mostProfitableProducts = Object.values(profitByProduct)
+    .map((p) => ({ name: p.name, profit: p.revenue - p.cost, margin: p.revenue > 0 ? ((p.revenue - p.cost) / p.revenue) * 100 : 0 }))
+    .sort((a, b) => b.profit - a.profit)
     .slice(0, 10);
 
   // termos mais pesquisados na loja — agrupados sem distinguir maiúsculas/minúsculas
@@ -318,5 +351,9 @@ export function useRealAnalytics(rangeKey) {
     mostFavorited,
     conversionBySource,
     funnel,
+    totalProfit,
+    profitMargin,
+    revenueWithoutCost,
+    mostProfitableProducts,
   };
 }

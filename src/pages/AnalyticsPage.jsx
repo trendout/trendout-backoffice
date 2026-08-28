@@ -62,10 +62,10 @@ export default function AnalyticsPage() {
             <StatCard label="Receita paga no período" value={`€${totalRevenue.toLocaleString("pt-PT", { maximumFractionDigits: 0 })}`} icon={TrendingUp} accent />
             <StatCard label="Valor médio por encomenda" value={`€${averageOrderValue.toLocaleString("pt-PT", { maximumFractionDigits: 2 })}`} icon={CreditCard} />
             <StatCard label="Taxa de abandono de carrinho" value={`${cartAbandonmentRate.toFixed(1)}%`} icon={Percent} />
-            <StatCard label="Lucro real (produtos com custo definido)" value={`€${totalProfit.toLocaleString("pt-PT", { maximumFractionDigits: 0 })}`} icon={PiggyBank} accent />
-            <StatCard label="Margem de lucro" value={`${profitMargin.toFixed(1)}%`} icon={Percent} />
+            <StatCard label="Lucro real (produtos com custo definido)" value={`€${(totalProfit || 0).toLocaleString("pt-PT", { maximumFractionDigits: 0 })}`} icon={PiggyBank} accent />
+            <StatCard label="Margem de lucro" value={`${(profitMargin || 0).toFixed(1)}%`} icon={Percent} />
           </div>
-          {revenueWithoutCost > 0 && (
+          {(revenueWithoutCost || 0) > 0 && (
             <p style={{ fontSize: 11.5, color: T.muted, margin: "0 0 16px", lineHeight: 1.5 }}>
               €{revenueWithoutCost.toLocaleString("pt-PT", { maximumFractionDigits: 0 })} de receita neste período vêm de produtos sem custo definido — não entram no cálculo do lucro. Preenche o custo nesses produtos para veres o lucro completo.
             </p>
@@ -318,7 +318,7 @@ export default function AnalyticsPage() {
             <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: T.muted, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 14 }}>
               <PiggyBank size={12} /> Produtos mais lucrativos
             </div>
-            {mostProfitableProducts.length === 0 ? (
+            {(mostProfitableProducts || []).length === 0 ? (
               <div style={{ color: T.muted, fontSize: 13 }}>Sem produtos com custo definido e vendidos neste período.</div>
             ) : (
               mostProfitableProducts.map((p, i) => (
