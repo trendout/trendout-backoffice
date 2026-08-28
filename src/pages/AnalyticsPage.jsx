@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Calendar, TrendingUp, ShoppingBag, BarChart3, Link as LinkIcon, Eye, Award, Search, ShoppingCart, Percent, CreditCard, Globe2, UserCircle2, Heart, Filter } from "lucide-react";
+import { Calendar, TrendingUp, ShoppingBag, BarChart3, Link as LinkIcon, Eye, Award, Search, ShoppingCart, Percent, CreditCard, Globe2, UserCircle2, Heart, Filter, PiggyBank } from "lucide-react";
 import {
   ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
@@ -29,7 +29,7 @@ function StatCard({ label, value, icon: Icon, accent }) {
 
 export default function AnalyticsPage() {
   const [range, setRange] = useState("30d");
-  const { loading, series, totalVisits, totalOrders, totalRevenue, conversion, averageOrderValue, cartAbandonmentRate, topPages, topReferrers, topProducts, bestSellers, topSearches, mostAddedToCart, topCustomers, salesByPaymentMethod, salesByCountry, mostFavorited, conversionBySource, funnel } = useRealAnalytics(range);
+  const { loading, series, totalVisits, totalOrders, totalRevenue, conversion, averageOrderValue, cartAbandonmentRate, topPages, topReferrers, topProducts, bestSellers, topSearches, mostAddedToCart, topCustomers, salesByPaymentMethod, salesByCountry, mostFavorited, conversionBySource, funnel, totalProfit, profitMargin, revenueWithoutCost, mostProfitableProducts } = useRealAnalytics(range);
 
   return (
     <div>
@@ -62,7 +62,14 @@ export default function AnalyticsPage() {
             <StatCard label="Receita paga no período" value={`€${totalRevenue.toLocaleString("pt-PT", { maximumFractionDigits: 0 })}`} icon={TrendingUp} accent />
             <StatCard label="Valor médio por encomenda" value={`€${averageOrderValue.toLocaleString("pt-PT", { maximumFractionDigits: 2 })}`} icon={CreditCard} />
             <StatCard label="Taxa de abandono de carrinho" value={`${cartAbandonmentRate.toFixed(1)}%`} icon={Percent} />
+            <StatCard label="Lucro real (produtos com custo definido)" value={`€${totalProfit.toLocaleString("pt-PT", { maximumFractionDigits: 0 })}`} icon={PiggyBank} accent />
+            <StatCard label="Margem de lucro" value={`${profitMargin.toFixed(1)}%`} icon={Percent} />
           </div>
+          {revenueWithoutCost > 0 && (
+            <p style={{ fontSize: 11.5, color: T.muted, margin: "0 0 16px", lineHeight: 1.5 }}>
+              €{revenueWithoutCost.toLocaleString("pt-PT", { maximumFractionDigits: 0 })} de receita neste período vêm de produtos sem custo definido — não entram no cálculo do lucro. Preenche o custo nesses produtos para veres o lucro completo.
+            </p>
+          )}
 
           <div style={{ background: T.bgRaised, border: `1px solid ${T.border}`, borderRadius: 12, padding: "20px 12px 8px", marginBottom: 16, height: 320 }}>
             <div style={{ fontSize: 11.5, color: T.muted, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 10, paddingLeft: 8 }}>Evolução de visitas e encomendas</div>
@@ -305,6 +312,22 @@ export default function AnalyticsPage() {
                 </>
               )}
             </div>
+          </div>
+
+          <div style={{ background: T.bgRaised, border: `1px solid ${T.border}`, borderRadius: 12, padding: 20, marginTop: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: T.muted, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 14 }}>
+              <PiggyBank size={12} /> Produtos mais lucrativos
+            </div>
+            {mostProfitableProducts.length === 0 ? (
+              <div style={{ color: T.muted, fontSize: 13 }}>Sem produtos com custo definido e vendidos neste período.</div>
+            ) : (
+              mostProfitableProducts.map((p, i) => (
+                <div key={p.name + i} style={{ display: "flex", justifyContent: "space-between", gap: 10, padding: "8px 0", borderTop: i > 0 ? `1px solid ${T.border}` : "none", fontSize: 13 }}>
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
+                  <span style={{ color: T.muted, flexShrink: 0 }}>€{p.profit.toFixed(2)} lucro · {p.margin.toFixed(0)}% margem</span>
+                </div>
+              ))
+            )}
           </div>
         </>
       )}

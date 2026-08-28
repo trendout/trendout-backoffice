@@ -10,7 +10,7 @@ export default function ProductModal({ product, categories, onClose, onSave }) {
       id: crypto.randomUUID(),
       name: "", reference: "", brand: "Trendout", ean: "", weightGrams: "",
       topCategory: topCategories[0]?.name || "", category: "", description: "",
-      features: [], basePrice: "", compareAtPrice: "", couponCode: "",
+      features: [], basePrice: "", compareAtPrice: "", costPrice: "", couponCode: "",
       availability: "available", active: true, images: [],
       variants: [{ id: crypto.randomUUID(), size: "M", color: "", sku: "", ean: "", stock: 0, soldRecently: 0 }],
     }
@@ -66,6 +66,7 @@ export default function ProductModal({ product, categories, onClose, onSave }) {
       ...form,
       basePrice: parseFloat(form.basePrice),
       compareAtPrice: form.compareAtPrice ? parseFloat(form.compareAtPrice) : null,
+      costPrice: form.costPrice ? parseFloat(form.costPrice) : null,
       weightGrams: form.weightGrams ? parseInt(form.weightGrams) : null,
       features: featuresText.split("\n").map((s) => s.trim()).filter(Boolean),
     });
@@ -117,12 +118,15 @@ export default function ProductModal({ product, categories, onClose, onSave }) {
           </Field>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 14 }}>
           <Field label="Preço (€)">
             <input style={inputStyle} type="number" step="0.01" value={form.basePrice} onChange={(e) => update("basePrice", e.target.value)} placeholder="24.90" />
           </Field>
           <Field label="Preço riscado (€, opcional)">
             <input style={inputStyle} type="number" step="0.01" value={form.compareAtPrice} onChange={(e) => update("compareAtPrice", e.target.value)} placeholder="29.90" />
+          </Field>
+          <Field label="Custo do produto (€, opcional)">
+            <input style={inputStyle} type="number" step="0.01" value={form.costPrice || ""} onChange={(e) => update("costPrice", e.target.value)} placeholder="9.50" />
           </Field>
           <Field label="Cupão em destaque">
             <input style={inputStyle} value={form.couponCode || ""} onChange={(e) => update("couponCode", e.target.value.toUpperCase())} placeholder="TREINO10" />

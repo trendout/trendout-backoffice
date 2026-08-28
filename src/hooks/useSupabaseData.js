@@ -38,6 +38,7 @@ export function useProducts() {
       description: p.description,
       basePrice: Number(p.base_price),
       compareAtPrice: p.compare_at_price ? Number(p.compare_at_price) : null,
+      costPrice: p.cost_price != null ? Number(p.cost_price) : null,
       couponCode: p.coupon_code,
       availability: p.availability,
       features: p.features || [],
@@ -79,6 +80,7 @@ export function useProducts() {
         description: product.description,
         base_price: product.basePrice,
         compare_at_price: product.compareAtPrice,
+        cost_price: product.costPrice || null,
         coupon_code: product.couponCode,
         availability: product.availability,
         features: product.features,
@@ -139,6 +141,7 @@ export function useProducts() {
     const columnMap = {
       basePrice: "base_price",
       compareAtPrice: "compare_at_price",
+      costPrice: "cost_price",
       reference: "reference",
       ean: "ean",
       active: "is_active",
