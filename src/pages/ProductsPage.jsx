@@ -150,6 +150,7 @@ export default function ProductsPage() {
                 { label: "EAN", field: null },
                 { label: "Preço (€)", field: "price" },
                 { label: "Preço promo (€)", field: null },
+                { label: "Custo (€)", field: null },
                 { label: "Stock", field: "stock" },
                 { label: "Disponibilidade", field: null },
                 { label: "Estado", field: null },
@@ -202,6 +203,9 @@ export default function ProductsPage() {
                   </td>
                   <td style={{ padding: "10px 14px" }}>
                     <input style={{ ...quickInputStyle, width: 76 }} type="number" step="0.01" value={p.compareAtPrice || ""} placeholder="—" onChange={(e) => quickUpdate(p.id, { compareAtPrice: e.target.value ? parseFloat(e.target.value) : null })} />
+                  </td>
+                  <td style={{ padding: "10px 14px" }}>
+                    <input style={{ ...quickInputStyle, width: 76 }} type="number" step="0.01" value={p.costPrice || ""} placeholder="—" onChange={(e) => quickUpdate(p.id, { costPrice: e.target.value ? parseFloat(e.target.value) : null })} />
                   </td>
                   <td style={{ padding: "10px 14px", position: "relative" }}>
                     <button
@@ -285,7 +289,7 @@ export default function ProductsPage() {
               );
             })}
             {pageItems.length === 0 && (
-              <tr><td colSpan={11} style={{ padding: 28, textAlign: "center", color: T.muted }}>Sem produtos encontrados.</td></tr>
+              <tr><td colSpan={12} style={{ padding: 28, textAlign: "center", color: T.muted }}>Sem produtos encontrados.</td></tr>
             )}
           </tbody>
         </table>
