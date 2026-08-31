@@ -194,6 +194,15 @@ export default function OrderDrawer({ order, onClose, onUpdateStatus, onMarkAsPa
           <select style={inputStyle} value={order.status} onChange={(e) => onUpdateStatus(order.id, e.target.value)}>
             {Object.entries(STATUS_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
           </select>
+          {order.reviewRequestedAt ? (
+            <div style={{ color: T.accent, fontSize: 12, marginTop: 8 }}>
+              Pedido de avaliação enviado em {new Date(order.reviewRequestedAt).toLocaleDateString("pt-PT")}
+            </div>
+          ) : order.status === "delivered" ? (
+            <div style={{ color: T.muted, fontSize: 12, marginTop: 8 }}>
+              O pedido de avaliação é enviado automaticamente ao marcar como "Entregue".
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

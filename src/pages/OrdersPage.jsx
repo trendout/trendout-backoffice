@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { T } from "../lib/theme";
 import { Badge, STATUS_META } from "../lib/orderStatus";
 import { useOrders } from "../hooks/useSupabaseData";
+import { supabase } from "../lib/supabase";
 import OrderDrawer from "../components/OrderDrawer";
 
 export default function OrdersPage() {
@@ -24,6 +25,11 @@ export default function OrdersPage() {
   const handleUpdateStatus = async (id, status) => {
     await updateStatus(id, status);
     setSelected((s) => (s && s.id === id ? { ...s, status } : s));
+    if (status === "delivered") {
+      supabase.functions.invoke("send-review-request", { body: { orderId: id } }).catch((err) => {
+        console.error("Erro ao enviar pedido de avaliação:", err.message);
+      });
+    }
   };
 
   const handleMarkAsPaid = async (id) => {

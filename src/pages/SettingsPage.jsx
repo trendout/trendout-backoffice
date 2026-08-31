@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Save, Globe, Building2, Code2, CreditCard, Zap, AlertTriangle, Search, Wrench, Megaphone, Gift, Tag, Mail } from "lucide-react";
+import { Save, Globe, Building2, Code2, CreditCard, Zap, AlertTriangle, Search, Wrench, Megaphone, Gift, Tag, Mail, Star } from "lucide-react";
 import { T, inputStyle, Field, Button } from "../lib/theme";
 import { useStoreSettings } from "../hooks/useStoreSettings";
 
@@ -62,6 +62,10 @@ export default function SettingsPage() {
         newsletterTitle: form.newsletterTitle,
         newsletterEmailPlaceholder: form.newsletterEmailPlaceholder,
         newsletterButtonLabel: form.newsletterButtonLabel,
+        reviewRequestEnabled: form.reviewRequestEnabled,
+        reviewRequestDaysAfterShipping: form.reviewRequestDaysAfterShipping,
+        reviewRequestSubject: form.reviewRequestSubject,
+        reviewRequestMessage: form.reviewRequestMessage,
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
@@ -175,6 +179,34 @@ export default function SettingsPage() {
                 <input style={inputStyle} value={form.newsletterButtonLabel || ""} onChange={(e) => update("newsletterButtonLabel", e.target.value)} placeholder="Subscrever" />
               </Field>
             </div>
+          </>
+        )}
+      </div>
+
+      <div style={{ background: T.bgRaised, border: `1px solid ${T.border}`, borderRadius: 12, padding: 24, marginBottom: 18 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 18, color: T.muted, fontSize: 12, textTransform: "uppercase", letterSpacing: 0.4 }}>
+          <Star size={14} /> Pedido de avaliação automático
+        </div>
+
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: T.text, cursor: "pointer", marginBottom: form.reviewRequestEnabled !== false ? 18 : 0 }}>
+          <input type="checkbox" checked={form.reviewRequestEnabled !== false} onChange={(e) => update("reviewRequestEnabled", e.target.checked)} style={{ accentColor: T.accent }} />
+          Enviar automaticamente
+        </label>
+
+        {form.reviewRequestEnabled !== false && (
+          <>
+            <Field label='Dias após o envio, se ninguém marcar como "Entregue" manualmente'>
+              <input style={{ ...inputStyle, maxWidth: 140 }} type="number" min="1" value={form.reviewRequestDaysAfterShipping ?? 7} onChange={(e) => update("reviewRequestDaysAfterShipping", parseInt(e.target.value) || 7)} />
+            </Field>
+            <Field label="Assunto do email">
+              <input style={inputStyle} value={form.reviewRequestSubject || ""} onChange={(e) => update("reviewRequestSubject", e.target.value)} placeholder="O que achaste da tua compra?" />
+            </Field>
+            <Field label="Mensagem">
+              <textarea style={{ ...inputStyle, minHeight: 100, resize: "vertical" }} value={form.reviewRequestMessage || ""} onChange={(e) => update("reviewRequestMessage", e.target.value)} />
+            </Field>
+            <p style={{ fontSize: 11.5, color: T.muted, margin: "-8px 0 0", lineHeight: 1.5 }}>
+              A lista dos produtos comprados, cada um com um link direto para avaliar, é adicionada automaticamente a seguir a esta mensagem — não precisas de os escrever.
+            </p>
           </>
         )}
       </div>

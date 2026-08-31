@@ -249,6 +249,7 @@ export function useOrders() {
         estimatedDelivery: o.estimated_delivery,
         vatRatePercent: o.vat_rate_percent != null ? Number(o.vat_rate_percent) : null,
         trackingCode: o.tracking_code || "",
+        reviewRequestedAt: o.review_requested_at,
         vatAmount: o.vat_amount != null ? Number(o.vat_amount) : null,
         createdAt: o.created_at,
         subtotal: Number(o.subtotal),
