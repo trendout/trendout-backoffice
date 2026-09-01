@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Plus, Trash2, X, Users, UserCog, Wallet, Check, ArrowUpDown, CheckSquare, Square } from "lucide-react";
+import { Plus, Trash2, X, Users, UserCog, Wallet, Check, ArrowUpDown, CheckSquare, Square, Copy, Link2 } from "lucide-react";
 import { T, inputStyle, Field, Button } from "../lib/theme";
 import { useCoupons } from "../hooks/useCoupons";
 import { useCouponUsage } from "../hooks/useCouponUsage";
@@ -18,6 +18,19 @@ export default function CouponsPage() {
   const [sortDir, setSortDir] = useState("asc");
   const [checkedIds, setCheckedIds] = useState(new Set());
   const [deletingSelected, setDeletingSelected] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(null);
+
+  const copyShareLink = async (code) => {
+    const link = `https://loja.trendout.pt/?cupao=${encodeURIComponent(code)}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopiedCode(code);
+      setTimeout(() => setCopiedCode((c) => (c === code ? null : c)), 1800);
+    } catch {
+      // alguns browsers/contextos bloqueiam o clipboard — mostra o link para copiar à mão
+      window.prompt("Copia o link:", link);
+    }
+  };
 
   if (loading) return <div style={{ color: T.muted, fontSize: 13.5 }}>A carregar cupões...</div>;
 
@@ -123,6 +136,7 @@ export default function CouponsPage() {
                 { label: "Estado", field: null },
                 { label: "Utilizações", field: "usage" },
                 { label: "Influenciador", field: null },
+                { label: "Link de partilha", field: null },
                 { label: "", field: null },
               ].map((h) => (
                 <th
@@ -179,13 +193,25 @@ export default function CouponsPage() {
                     </button>
                   )}
                 </td>
+                <td style={{ padding: "12px 16px" }}>
+                  <button
+                    onClick={() => copyShareLink(d.code)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 6, background: "none",
+                      border: `1px solid ${copiedCode === d.code ? T.accent : T.border}`, borderRadius: 6,
+                      padding: "5px 10px", color: copiedCode === d.code ? T.accent : T.muted, cursor: "pointer", fontSize: 11.5,
+                    }}
+                  >
+                    {copiedCode === d.code ? <><Check size={12} /> Copiado</> : <><Link2 size={12} /> Copiar link</>}
+                  </button>
+                </td>
                 <td style={{ padding: "12px 16px", textAlign: "right" }}>
                   <button onClick={() => deleteCoupon(d.id)} style={{ background: "none", border: "none", color: T.danger, cursor: "pointer" }}><Trash2 size={15} /></button>
                 </td>
               </tr>
             ))}
             {coupons.length === 0 && (
-              <tr><td colSpan={8} style={{ padding: 28, textAlign: "center", color: T.muted }}>Sem cupões criados.</td></tr>
+              <tr><td colSpan={9} style={{ padding: 28, textAlign: "center", color: T.muted }}>Sem cupões criados.</td></tr>
             )}
           </tbody>
         </table>
